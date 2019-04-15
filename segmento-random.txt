@@ -1,7 +1,13 @@
-invoke  GetTickCount
-invoke  nseed, eax
-invoke  nrandom, 6 ;gera um numero random de 0 a 6 (7 possibilidades)
-;//caso queiramos printar, precisamos de \/ no .data 
-;//                           randomnum  db  2 dup (?)
-;invoke  dwtoa, eax, offset randomnum ;double word to ascii
-;invoke  StdOut, offset randomnum     ;printa em console o valor
+gerar:
+    invoke  GetTickCount
+    invoke  nseed, eax
+    invoke  nrandom, 8 ;gera um numero random de 0 a 8
+    ;geramos de 0 a 8 para que os numeros que nós queremos (1-7) se tornam equiprováveis
+    cmp eax,0
+    je gerar
+    cmp eax,8
+    je gerar
+    ;//caso queiramos printar, precisamos de \/ no .data 
+    ;//                           randomnum  db  2 dup (?)
+    ;invoke  dwtoa, eax, offset randomnum ;double word to ascii
+    ;invoke  StdOut, offset randomnum     ;printa em console o valor
