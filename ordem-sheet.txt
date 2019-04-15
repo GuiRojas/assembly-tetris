@@ -1,0 +1,7 @@
+1= L (laranja)
+2= J (azul escuro)
+3= S (verde)
+4= Z (vermelho)
+5= O (amarelo)
+6= T (roxo)
+7= I (azul claro)
