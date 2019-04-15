@@ -1,0 +1,7 @@
+invoke  GetTickCount
+invoke  nseed, eax
+invoke  nrandom, 6 ;gera um numero random de 0 a 6 (7 possibilidades)
+;//caso queiramos printar, precisamos de \/ no .data 
+;//                           randomnum  db  2 dup (?)
+;invoke  dwtoa, eax, offset randomnum ;double word to ascii
+;invoke  StdOut, offset randomnum     ;printa em console o valor
