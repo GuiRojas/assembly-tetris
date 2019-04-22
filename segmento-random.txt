@@ -1,4 +1,17 @@
-gerar:
+﻿; area de declaração de variaveis
+.data
+    randomnum  db  2 dup (?)
+    header_format       db      "Numero aletorio : %s",0              
+    buffer              db      256 dup(?) 
+    
+
+.data?
+    prox        dw  ?    
+
+.code
+
+getrandom proc uses eax
+  gerar:
     invoke  GetTickCount
     invoke  nseed, eax
     invoke  nrandom, 8 ;gera um numero random de 0 a 8
@@ -11,3 +24,17 @@ gerar:
     ;//                           randomnum  db  2 dup (?)
     ;invoke  dwtoa, eax, offset randomnum ;double word to ascii
     ;invoke  StdOut, offset randomnum     ;printa em console o valor
+    mov prox,ax
+    ret;
+getrandom
+
+;exemplo
+start:
+
+    call getrandom
+    xor eax,eax
+    mov ax,prox
+    invoke  dwtoa, eax, offset randomnum ;double word to ascii
+    invoke  StdOut, offset randomnum      ;printa em console o valor
+
+end start

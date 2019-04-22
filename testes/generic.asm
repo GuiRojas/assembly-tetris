@@ -25,11 +25,13 @@
       ; file for that library.
       ; -------------------------------------------------------------
 
+	    include \masm32\include\masm32.inc
       include \masm32\include\user32.inc
       include \masm32\include\kernel32.inc
       include \masm32\include\gdi32.inc
       include \masm32\include\msimg32.inc
 
+    	includelib \masm32\lib\masm32.lib
       includelib \masm32\lib\user32.lib
       includelib \masm32\lib\kernel32.lib
       includelib \masm32\lib\gdi32.lib
@@ -123,6 +125,12 @@
         hBmpDesenho1  dd 0
         hBmpDesenho2  dd 0
 
+        prox          dw 0
+
+        matriz  dd 10*30 dup (0)
+        x             db 0
+        y             db 0
+
     .data?
         iTimer  dd ?
         posX    dd ?
@@ -141,6 +149,40 @@
 
     .code
 
+
+getrandom proc
+  gerar:
+    push eax
+    invoke  GetTickCount
+    invoke  nseed, eax
+    invoke  nrandom, 8 ;gera um numero random de 0 a 8
+    ;geramos de 0 a 8 para que os numeros que nós queremos (1-7) se tornam equiprováveis
+    cmp eax,0
+    je gerar
+    cmp eax,8
+    je gerar
+    ;//caso queiramos printar, precisamos de \/ no .data 
+    ;//                           randomnum  db  2 dup (?)
+    ;invoke  dwtoa, eax, offset randomnum ;double word to ascii
+    ;invoke  StdOut, offset randomnum     ;printa em console o valor
+    mov prox,ax  
+    pop eax
+    ret;
+getrandom endp
+
+;simula matriz[x,y]
+getMatriz PROC 
+    lea edi, matriz ;edi carrega o endereço da matriz
+    ;mov eax, 30
+    ;mul x
+    ;add edi, eax
+    ;mov eax, 1
+    ;mul y
+    ;add edi, eax
+    mov eax, DWORD ptr [edi]
+    ret
+getMatriz endp
+
 ; -----------------------------------------------------------------------
 ; The label "start:" is the address of the start of the code section and
 ; it has a matching "end start" at the end of the file. All procedures in
@@ -148,6 +190,16 @@
 ; -----------------------------------------------------------------------
 
 start:
+    mov matriz, 0
+    mov matriz+1, 8
+    mov matriz+2, 16
+    mov matriz+3, 24
+    mov matriz+4, 32
+    mov matriz+5, 40
+    mov matriz+6, 48
+    mov matriz+7, 56
+    mov matriz+8, 64
+
     invoke GetModuleHandle, NULL ; provides the instance handle
     mov hInstance, eax
 
@@ -417,12 +469,22 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
 
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT
+
+  mov x, 0
+  mov y, 0
+  call getMatriz  
+
+
+
+  invoke TransparentBlt, hDC, eax, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT
   ;nao sei, posicao do inicio do X img, posicao do inicio do Y img, tamanho do X da img, tamanho do Y da img, nao sei, onde vai pegar no X do bitmap, 
   ;onde vai pegar no Y do bitmap, o qnt vai pegar no X do bitmap, o qnt vai pegar no Y do bitmap, se vai ser transparente
-  
-  
-  
+    
+  mov x, 0
+  mov y, 4
+  call getMatriz
+
+  invoke TransparentBlt, hDC, eax, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT 
   
   invoke SelectObject, hDC, hOld
 
@@ -444,7 +506,7 @@ Final_Proc proc hWin:DWORD, hDC:DWORD
   mov     hOld, eax
   invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT
   invoke SelectObject, hDC, hOld
-
+  
   invoke DeleteDC, memDC
 
   return 0
