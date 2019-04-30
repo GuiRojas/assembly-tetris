@@ -127,9 +127,14 @@
 
         prox          dw 0
 
-        matriz  dd 10*30 dup (0)
-        x             db 0
-        y             db 0
+        matriz        db 10*25 dup (0)
+        matx          db 0
+        maty          db 0
+        matval        db 1 dup (?)
+        ;acesso a matriz: 
+        ;mov al, byte ptr [matriz + x*n + y]
+        ;utilize o proc getMatriz ^^' plz
+
 
     .data?
         iTimer  dd ?
@@ -190,15 +195,6 @@ getMatriz endp
 ; -----------------------------------------------------------------------
 
 start:
-    mov matriz, 0
-    mov matriz+1, 8
-    mov matriz+2, 16
-    mov matriz+3, 24
-    mov matriz+4, 32
-    mov matriz+5, 40
-    mov matriz+6, 48
-    mov matriz+7, 56
-    mov matriz+8, 64
 
     invoke GetModuleHandle, NULL ; provides the instance handle
     mov hInstance, eax
@@ -395,7 +391,7 @@ WndProc proc hWin   :DWORD,
       
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
-
+        
     .elseif uMsg == WM_CLOSE
     ; -------------------------------------------------------------------
     ; This is the place where various requirements are performed before
@@ -470,20 +466,10 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
 
-  mov x, 0
-  mov y, 0
-  call getMatriz  
-
-
-
   invoke TransparentBlt, hDC, eax, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT
   ;nao sei, posicao do inicio do X img, posicao do inicio do Y img, tamanho do X da img, tamanho do Y da img, nao sei, onde vai pegar no X do bitmap, 
   ;onde vai pegar no Y do bitmap, o qnt vai pegar no X do bitmap, o qnt vai pegar no Y do bitmap, se vai ser transparente
     
-  mov x, 0
-  mov y, 4
-  call getMatriz
-
   invoke TransparentBlt, hDC, eax, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT 
   
   invoke SelectObject, hDC, hOld
@@ -512,5 +498,35 @@ Final_Proc proc hWin:DWORD, hDC:DWORD
   return 0
 
 Final_Proc endp
+
+;exemplo de uso:
+; mov maty, 2
+; mov matx, 15
+; call getMatrix
+; fazerAlgoCom matval
+;matriz[x,y]
+getMatriz proc uses ax cx
+    xor eax, eax            ;limpa registrador
+    mov al, maty            ;move valor Y
+    mov cx,10               ;move tamanho da linha
+    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
+    xor cx,cx               ;limpa cx
+    mov cl, matx            ;move valor X
+    add ax, cx              ;soma à posição final
+    mov edi, OFFSET matriz  ;move pro EDI a posição da memória da matriz
+    add edi, eax            ;soma pra posição da matriz a posição desejada
+    mov al, byte ptr[edi]   ;coloca o valor da posição no al
+    mov matval, al          ;move al pra variavel desejada
+    ret                     ;fim
+getMatriz endp
+
+;exemplo de uso:
+; mov matx, 2
+; mov maty, 15
+; mov al, valorDesejado
+; call getMatrix
+setMatrix proc uses al
+    ;calma
+setMatriz endp
 
 end start
