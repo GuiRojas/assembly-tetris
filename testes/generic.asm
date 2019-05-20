@@ -229,14 +229,14 @@ WndProc proc hWin   :DWORD,
 
     .elseif uMsg == WM_KEYUP
 
-      .if wParam == VK_LEFT
+      .if wParam == VK_UP
         dec   posicaoPeca
 
         .if posicaoPeca == -1
           mov posicaoPeca, 3
         .endif
 
-      .elseif wParam == VK_RIGHT
+      .elseif wParam == VK_DOWN
         inc   posicaoPeca
 
         .if posicaoPeca == 4
@@ -282,12 +282,6 @@ WndProc proc hWin   :DWORD,
     .elseif uMsg == WM_CLOSE
 
         invoke  KillTimer, hWin, iTimer
-
-        szText TheText,"Voce deseja mesmo sair?"
-        invoke MessageBox,hWin,ADDR TheText,ADDR szDisplayName,MB_YESNO
-          .if eax == IDNO
-            return 0
-          .endif
 
 ; ########################################################################
 
