@@ -1,37 +1,16 @@
-; #########################################################################
-;
-;             GENERIC.ASM is a roadmap around a standard 32 bit 
-;              windows application skeleton written in MASM32.
-;
-; #########################################################################
-
-;           Assembler specific instructions for 32 bit ASM code
-
-      .386                   ; minimum processor needed for 32 bit
-      .model flat, stdcall   ; FLAT memory model & STDCALL calling
-      option casemap :none   ; set code to case sensitive
+      .386
+      .model flat, stdcall
+      option casemap :none
 
 ; #########################################################################
 
-      ; ---------------------------------------------
-      ; main include file with equates and structures
-      ; ---------------------------------------------
       include \masm32\include\windows.inc
 
-      ; -------------------------------------------------------------
-      ; In MASM32, each include file created by the L2INC.EXE utility
-      ; has a matching library file. If you need functions from a
-      ; specific library, you use BOTH the include file and library
-      ; file for that library.
-      ; -------------------------------------------------------------
-
-	    include \masm32\include\masm32.inc
       include \masm32\include\user32.inc
       include \masm32\include\kernel32.inc
       include \masm32\include\gdi32.inc
       include \masm32\include\msimg32.inc
 
-    	includelib \masm32\lib\masm32.lib
       includelib \masm32\lib\user32.lib
       includelib \masm32\lib\kernel32.lib
       includelib \masm32\lib\gdi32.lib
@@ -39,15 +18,7 @@
 
 ; #########################################################################
 
-; ------------------------------------------------------------------------
-; MACROS are a method of expanding text at assembly time. This allows the
-; programmer a tidy and convenient way of using COMMON blocks of code with
-; the capacity to use DIFFERENT parameters in each block.
-; ------------------------------------------------------------------------
-
-      ; 1. szText
-      ; A macro to insert TEXT into the code section for convenient and 
-      ; more intuitive coding of functions that use byte data as text.
+; MACROS:
 
       szText MACRO Name, Text:VARARG
         LOCAL lbl
@@ -55,25 +26,12 @@
             Name db Text,0
           lbl:
         ENDM
-
-      ; 2. m2m
-      ; There is no mnemonic to copy from one memory location to another,
-      ; this macro saves repeated coding of this process and is easier to
-      ; read in complex code.
-
+;
       m2m MACRO M1, M2
         push M2
         pop  M1
       ENDM
-
-      ; 3. return
-      ; Every procedure MUST have a "ret" to return the instruction
-      ; pointer EIP back to the next instruction after the call that
-      ; branched to it. This macro puts a return value in eax and
-      ; makes the "ret" instruction on one line. It is mainly used
-      ; for clear coding in complex conditionals in large branching
-      ; code such as the WndProc procedure.
-
+;
       return MACRO arg
         mov eax, arg
         ret
@@ -81,23 +39,17 @@
 
 ; #########################################################################
 
-; ----------------------------------------------------------------------
-; Prototypes are used in conjunction with the MASM "invoke" syntax for
-; checking the number and size of parameters passed to a procedure. This
-; improves the reliability of code that is written where errors in
-; parameters are caught and displayed at assembly time.
-; ----------------------------------------------------------------------
+; METODOS
 
         WinMain PROTO :DWORD,:DWORD,:DWORD,:DWORD
         WndProc PROTO :DWORD,:DWORD,:DWORD,:DWORD
         TopXY PROTO   :DWORD,:DWORD
 
         Paint_Proc    PROTO :DWORD, :DWORD
-        Final_Proc    PROTO :DWORD, :DWORD
 
 ; #########################################################################
 
-; definindo as constantes
+;CONSTANTES
 
         desenho1 equ  100
         desenho2 equ  101
@@ -109,13 +61,6 @@
         ID_TIMER  EQU 1
         TIMER_MAX EQU 100
 
-; ------------------------------------------------------------------------
-; This is the INITIALISED data section meaning that data declared here has
-; an initial value. You can also use an UNINIALISED section if you need
-; data of that type [ .data? ]. Note that they are different and occur in
-; different sections.
-; ------------------------------------------------------------------------
-
     .data
         szDisplayName db "Primeiro Programa",0
         CommandLine   dd 0
@@ -123,18 +68,8 @@
         hInstance     dd 0
 
         hBmpDesenho1  dd 0
-        hBmpDesenho2  dd 0
 
-        prox          dw 0
-
-        matriz        db 10*25 dup (0)
-        matx          db 0
-        maty          db 0
-        matval        db 1 dup (?)
-        ;acesso a matriz: 
-        ;mov al, byte ptr [matriz + x*n + y]
-        ;utilize o proc getMatriz ^^' plz
-
+        posicaoPeca   dd 0
 
     .data?
         iTimer  dd ?
@@ -144,110 +79,15 @@
 
 ; #########################################################################
 
-; ------------------------------------------------------------------------
-; This is the start of the code section where executable code begins. This
-; section ending with the ExitProcess() API function call is the only
-; GLOBAL section of code and it provides access to the WinMain function
-; with the necessary parameters, the instance handle and the command line
-; address.
-; ------------------------------------------------------------------------
-
     .code
 
-
-;////////// tutorial matriz /////////////////////////////////////////////////
-;a matriz tem tamanho 10 no X e 25 no Y
-;para usar os procedimentos, basta pensar:
-;matriz(x,y)  --->
-;mov matx, X    +   mov maty, Y
-;valores usam a var matval
-;exemplos de uso:
-;SETTAR VALOR          GETTAR VALOR         <--------------------------------
-;mov matx,2            mov matx,2
-;mov maty,4            mov maty,4
-;mov matval, 80        call getMatriz
-;call setMatriz        mov al, matval
-;////////////////////////////////////////////////////////////////////////////
-getMatriz proc uses ax cx
-    xor eax, eax            ;limpa registrador
-    mov al, maty            ;move valor Y
-    mov cx, 4               ;move tamanho da linha
-    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
-    xor cx,cx               ;limpa cx
-    mov cl, matx            ;move valor X
-    add ax, cx              ;soma à posição final
-    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
-    add edi, eax            ;soma pra posição da matriz a posição desejada
-    mov al, byte ptr[edi]   ;coloca o valor da posição no al
-    mov matval, al          ;move al pra variavel desejada
-    ret                     ;fim
-getMatriz endp
-
-setMatriz proc uses ax cx
-    xor eax, eax            ;limpa registrador
-    mov al, maty            ;move valor Y
-    mov cx, 4               ;move tamanho da linha
-    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
-    xor cx,cx               ;limpa cx
-    mov cl, matx            ;move valor X
-    add ax, cx              ;soma à posição final
-    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
-    add edi, eax            ;soma pra posição da matriz a posição desejada
-    ;coloca o valor da matriz no edi
-    mov al, matval
-    mov byte ptr[edi], al
-    ret      
-setMatriz endp
-
-getrandom proc
-  gerar:
-    push eax
-    invoke  GetTickCount
-    invoke  nseed, eax
-    invoke  nrandom, 8 ;gera um numero random de 0 a 8
-    ;geramos de 0 a 8 para que os numeros que nós queremos (1-7) se tornam equiprováveis
-    cmp eax,0
-    je gerar
-    cmp eax,8
-    je gerar
-    ;//caso queiramos printar, precisamos de \/ no .data 
-    ;//                           randomnum  db  2 dup (?)
-    ;invoke  dwtoa, eax, offset randomnum ;double word to ascii
-    ;invoke  StdOut, offset randomnum     ;printa em console o valor
-    mov prox,ax  
-    pop eax
-    ret;
-getrandom endp
-
-;simula matriz[x,y]
-getMatriz PROC 
-    lea edi, matriz ;edi carrega o endereço da matriz
-    ;mov eax, 30
-    ;mul x
-    ;add edi, eax
-    ;mov eax, 1
-    ;mul y
-    ;add edi, eax
-    mov eax, DWORD ptr [edi]
-    ret
-getMatriz endp
-
-; -----------------------------------------------------------------------
-; The label "start:" is the address of the start of the code section and
-; it has a matching "end start" at the end of the file. All procedures in
-; this module must be written between these two.
-; -----------------------------------------------------------------------
-
 start:
-
     invoke GetModuleHandle, NULL ; provides the instance handle
     mov hInstance, eax
 
     invoke LoadBitmap, hInstance, mina
     mov hBmpDesenho1, eax
 
-    invoke LoadBitmap, hInstance, mina
-    mov hBmpDesenho2, eax
 
     invoke GetCommandLine        ; provides the command line address
     mov CommandLine, eax
@@ -263,10 +103,6 @@ WinMain proc hInst     :DWORD,
              CmdLine   :DWORD,
              CmdShow   :DWORD
 
-        ;====================
-        ; Put LOCALs on stack
-        ;====================
-
         LOCAL wc   :WNDCLASSEX
         LOCAL msg  :MSG
 
@@ -276,10 +112,6 @@ WinMain proc hInst     :DWORD,
         LOCAL Wty  :DWORD
 
         szText szClassName,"Primeiro_Class"
-
-        ;==================================================
-        ; Fill WNDCLASSEX structure with required variables
-        ;==================================================
 
         mov wc.cbSize,         sizeof WNDCLASSEX
         mov wc.style,          CS_HREDRAW or CS_VREDRAW \
@@ -360,23 +192,9 @@ WndProc proc hWin   :DWORD,
         LOCAL Ps  :PAINTSTRUCT
         LOCAL hDC :DWORD   ;handle do dispositivo
 
-; -------------------------------------------------------------------------
-; Message are sent by the operating system to an application through the
-; WndProc proc. Each message can have additional values associated with it
-; in the two parameters, wParam & lParam. The range of additional data that
-; can be passed to an application is determined by the message.
-; -------------------------------------------------------------------------
-
+; ########################################################################
     .if uMsg == WM_COMMAND
-    ;----------------------------------------------------------------------
-    ; The WM_COMMAND message is sent by menus, buttons and toolbar buttons.
-    ; Processing the wParam parameter of it is the method of obtaining the
-    ; control's ID number so that the code for each operation can be
-    ; processed. NOTE that the ID number is in the LOWORD of the wParam
-    ; passed with the WM_COMMAND message. There may be some instances where
-    ; an application needs to seperate the high and low words of wParam.
-    ; ---------------------------------------------------------------------
-    
+  
     ;======== menu commands ========
 
         .if wParam == 1000
@@ -395,34 +213,50 @@ WndProc proc hWin   :DWORD,
       invoke  Paint_Proc, hWin, hDC
       invoke  EndPaint, hWin, ADDR Ps
 
+; ########################################################################
+
     .elseif uMsg == WM_CREATE
-    ; --------------------------------------------------------------------
-    ; This message is sent to WndProc during the CreateWindowEx function
-    ; call and is processed before it returns. This is used as a position
-    ; to start other items such as controls. IMPORTANT, the handle for the
-    ; CreateWindowEx call in the WinMain does not yet exist so the HANDLE
-    ; passed to the WndProc [ hWin ] must be used here for any controls
-    ; or child windows.
-    ; --------------------------------------------------------------------
+
       mov     posX, 10
       mov     posY, 10
 
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
 
-    .elseif uMsg == WM_TIMER
+; ########################################################################
+
+    .elseif uMsg == WM_KEYUP
+
+      .if wParam == VK_LEFT
+        dec   posicaoPeca
+
+        .if posicaoPeca == -1
+          mov posicaoPeca, 3
+        .endif
+
+      .elseif wParam == VK_RIGHT
+        inc   posicaoPeca
+
+        .if posicaoPeca == 4
+          mov posicaoPeca, 0
+        .endif
+
+      .endif
+
+; ########################################################################
+
+    .elseif uMsg == WM_TIMER ;TIMER
 
       invoke  KillTimer, hWin, iTimer
       inc     posX
       add     posY, 2
 
-      .if posY == 266 
+      .if posY == 202 
 
         invoke  InvalidateRect, hWin, NULL, FALSE
 
         invoke  BeginPaint, hWin, ADDR Ps
         mov     hDC, eax
-        invoke  Final_Proc, hWin, hDC
         invoke  EndPaint, hWin, ADDR Ps
         mov   posY, 10
 
@@ -435,16 +269,11 @@ WndProc proc hWin   :DWORD,
       
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
-        
+
+; ########################################################################
+
     .elseif uMsg == WM_CLOSE
-    ; -------------------------------------------------------------------
-    ; This is the place where various requirements are performed before
-    ; the application exits to the operating system such as deleting
-    ; resources and testing if files have been saved. You have the option
-    ; of returning ZERO if you don't wish the application to close which
-    ; exits the WndProc procedure without passing this message to the
-    ; default window processing done by the operating system.
-    ; -------------------------------------------------------------------
+
         invoke  KillTimer, hWin, iTimer
 
         szText TheText,"Voce deseja mesmo sair?"
@@ -453,27 +282,15 @@ WndProc proc hWin   :DWORD,
             return 0
           .endif
 
+; ########################################################################
+
     .elseif uMsg == WM_DESTROY
-    ; ----------------------------------------------------------------
-    ; This message MUST be processed to cleanly exit the application.
-    ; Calling the PostQuitMessage() function makes the GetMessage()
-    ; function in the WinMain() main loop return ZERO which exits the
-    ; application correctly. If this message is not processed properly
-    ; the window disappears but the code is left in memory.
-    ; ----------------------------------------------------------------
+
         invoke PostQuitMessage,NULL
         return 0 
     .endif
 
     invoke DefWindowProc,hWin,uMsg,wParam,lParam
-    ; --------------------------------------------------------------------
-    ; Default window processing is done by the operating system for any
-    ; message that is not processed by the application in the WndProc
-    ; procedure. If the application requires other than default processing
-    ; it executes the code when the message is trapped and returns ZERO
-    ; to exit the WndProc procedure before the default window processing
-    ; occurs with the call to DefWindowProc().
-    ; --------------------------------------------------------------------
 
     ret
 
@@ -510,12 +327,67 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
 
-  invoke TransparentBlt, hDC, eax, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT
-  ;nao sei, posicao do inicio do X img, posicao do inicio do Y img, tamanho do X da img, tamanho do Y da img, nao sei, onde vai pegar no X do bitmap, 
-  ;onde vai pegar no Y do bitmap, o qnt vai pegar no X do bitmap, o qnt vai pegar no Y do bitmap, se vai ser transparente
-    
-  invoke TransparentBlt, hDC, eax, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT 
+  .if posicaoPeca == 0
+    jmp direita
+
+  .elseif posicaoPeca == 1
+    jmp cima
+
+  .elseif posicaoPeca == 2
+    jmp esquerda
+
+  .elseif posicaoPeca == 3
+    jmp baixo
+
+  .endif
   
+direita:
+invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+    
+  add posY, 32
+  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  add posY, 32
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  sub posY, 32
+  sub posY, 32
+
+  jmp fimA
+
+baixo:
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+    
+  add posY, 32
+  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  sub posY, 32
+
+  jmp fimA
+
+cima:
+  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  
+  add posY, 32
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  sub posY, 32
+
+  jmp fimA
+
+esquerda:
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+    
+  add posY, 32
+  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  add posY, 32
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  sub posY, 32
+  sub posY, 32
+
+fimA:
   invoke SelectObject, hDC, hOld
 
   invoke DeleteDC, memDC
@@ -523,54 +395,5 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
   return 0
 
 Paint_Proc endp
-
-Final_Proc proc hWin:DWORD, hDC:DWORD
-
-  LOCAL hOld:DWORD
-  LOCAL memDC:DWORD
-
-  invoke  CreateCompatibleDC, hDC
-  mov     memDC, eax
-
-  invoke SelectObject, memDC, hBmpDesenho2
-  mov     hOld, eax
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 256, 32, 32, CREF_TRANSPARENT
-  invoke SelectObject, hDC, hOld
-  
-  invoke DeleteDC, memDC
-
-  return 0
-
-Final_Proc endp
-
-;exemplo de uso:
-; mov maty, 2
-; mov matx, 15
-; call getMatrix
-; fazerAlgoCom matval
-;matriz[x,y]
-getMatriz proc uses ax cx
-    xor eax, eax            ;limpa registrador
-    mov al, maty            ;move valor Y
-    mov cx,10               ;move tamanho da linha
-    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
-    xor cx,cx               ;limpa cx
-    mov cl, matx            ;move valor X
-    add ax, cx              ;soma à posição final
-    mov edi, OFFSET matriz  ;move pro EDI a posição da memória da matriz
-    add edi, eax            ;soma pra posição da matriz a posição desejada
-    mov al, byte ptr[edi]   ;coloca o valor da posição no al
-    mov matval, al          ;move al pra variavel desejada
-    ret                     ;fim
-getMatriz endp
-
-;exemplo de uso:
-; mov matx, 2
-; mov maty, 15
-; mov al, valorDesejado
-; call getMatrix
-setMatrix proc uses al
-    ;calma
-setMatriz endp
 
 end start
