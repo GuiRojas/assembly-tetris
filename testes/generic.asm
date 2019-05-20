@@ -70,13 +70,29 @@
         hBmpDesenho1  dd 0
 
         posicaoPeca   dd 0
+        tipoPeca      db 0
 
         timerDesce    dd 0
+        
+        matrix      db  4*4*2   dup(0)  
+        matx          db 0
+        maty          db 0
+        matval        db 1 dup (?)
+
+        posX    dd 0
+        posY    dd 0
+
+        posX1    dd 0
+        posY1    dd 0
+
+        posX2    dd 0
+        posY2    dd 0
+
+        posX3    dd 0
+        posY3    dd 0
 
     .data?
         iTimer  dd ?
-        posX    dd ?
-        posY    dd ?
 
 
 ; #########################################################################
@@ -99,6 +115,65 @@ start:
     invoke ExitProcess,eax       ; cleanup & return to operating system
 
 ; #########################################################################
+
+igualaBlocos proc uses eax
+  mov eax, posX
+  mov posX1, eax
+  mov posX2, eax
+  mov posX3, eax
+  mov eax, posY
+  mov posY1, eax
+  mov posY2, eax
+  mov posY3, eax
+
+  ret  
+igualaBlocos endp
+
+
+
+;////////// tutorial matriz /////////////////////////////////////////////////
+;a matriz tem tamanho 10 no X e 25 no Y
+;para usar os procedimentos, basta pensar:
+;matriz(x,y)  --->
+;mov matx, X    +   mov maty, Y
+;valores usam a var matval
+;exemplos de uso:
+;SETTAR VALOR          GETTAR VALOR         <--------------------------------
+;mov matx,2            mov matx,2
+;mov maty,4            mov maty,4
+;mov matval, 80        call getMatriz
+;call setMatriz        mov al, matval
+;/////////////////////////////////////////////////////////////////////////////
+getMatriz proc uses ax cx
+    xor eax, eax            ;limpa registrador
+    mov al, maty            ;move valor Y
+    mov cx, 4               ;move tamanho da linha
+    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
+    xor cx,cx               ;limpa cx
+    mov cl, matx            ;move valor X
+    add ax, cx              ;soma à posição final
+    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
+    add edi, eax            ;soma pra posição da matriz a posição desejada
+    mov al, byte ptr[edi]   ;coloca o valor da posição no al
+    mov matval, al          ;move al pra variavel desejada
+    ret                     ;fim
+getMatriz endp
+
+setMatriz proc uses ax cx
+    xor eax, eax            ;limpa registrador
+    mov al, maty            ;move valor Y
+    mov cx, 4               ;move tamanho da linha
+    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
+    xor cx,cx               ;limpa cx
+    mov cl, matx            ;move valor X
+    add ax, cx              ;soma à posição final
+    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
+    add edi, eax            ;soma pra posição da matriz a posição desejada
+    ;coloca o valor da matriz no edi
+    mov al, matval
+    mov byte ptr[edi], al
+    ret      
+setMatriz endp
 
 WinMain proc hInst     :DWORD,
              hPrevInst :DWORD,
@@ -137,8 +212,8 @@ WinMain proc hInst     :DWORD,
         ; Centre window at following size
         ;================================
 
-        mov Wwd, 320
-        mov Wht, 640
+        mov Wwd, 340
+        mov Wht, 606
 
         invoke GetSystemMetrics,SM_CXSCREEN ; get screen width in pixels
         invoke TopXY,Wwd,eax
@@ -219,9 +294,6 @@ WndProc proc hWin   :DWORD,
 
     .elseif uMsg == WM_CREATE
 
-      mov     posX, 10
-      mov     posY, 10
-
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
 
@@ -242,6 +314,17 @@ WndProc proc hWin   :DWORD,
         .if posicaoPeca == 4
           mov posicaoPeca, 0
         .endif
+        
+      .elseif wParam == VK_RIGHT
+        add posX, 32
+
+        ;fazer logica funcional dps
+        
+        
+      .elseif wParam == VK_LEFT
+        sub posX, 32
+
+        ;fazer logica funcional dps
 
       .endif
 
@@ -250,22 +333,20 @@ WndProc proc hWin   :DWORD,
     .elseif uMsg == WM_TIMER ;TIMER
 
       invoke  KillTimer, hWin, iTimer
-      inc     posX
-      add     timerDesce, 2
+      inc timerDesce
 
-      .if timerDesce == 20
+      .if timerDesce == 3
         mov timerDesce, 0
         add posY, 32
       .endif
 
-      .if posY == 202 
-
+      .if posY == 544
         invoke  InvalidateRect, hWin, NULL, FALSE
 
         invoke  BeginPaint, hWin, ADDR Ps
         mov     hDC, eax
         invoke  EndPaint, hWin, ADDR Ps
-        mov   posY, 10
+        mov   posY, 0
 
       .elseif
 
@@ -343,60 +424,51 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
   .endif
   
 esquerda:
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-    
-  add posY, 32
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-
-  add posY, 32
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-
-  sub posY, 32
-  sub posY, 32
+  ; 1
+  ;2X
+  ; 3
+  call igualaBlocos
+  sub posY1, 32
+  sub posX2, 32
+  add posY3, 32
 
   jmp fimA
 
 baixo:
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-    
-  add posY, 32
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
- 
-  sub posY, 32
+  ;1X2
+  ; 3
+  call igualaBlocos
+  sub posX1, 32
+  add posX2, 32
+  add posY3, 32
 
   jmp fimA
 
 cima:
-  add posY, 32
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  
-  add posY, 32
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-
-  sub posY, 32
-  sub posY, 32
+  ; 2
+  ;1X3
+  call igualaBlocos
+  sub posX1, 32
+  sub posY2, 32
+  add posX3, 32
 
   jmp fimA
 
 direita:
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-    
-  add posY, 32
-  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-
-  add posY, 32
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  
-  sub posY, 32
-  sub posY, 32
-
+  ; 1
+  ; X2
+  ; 3
+  call igualaBlocos
+  sub posY1, 32
+  add posX2, 32
+  add posY3, 32
 fimA:
+  
+  invoke TransparentBlt, hDC, posX,  posY,  32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, posX1, posY1, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, posX2, posY2, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, posX3, posY3, 32, 32, memDC, 0, 160, 32, 32, TRUE
+
   invoke SelectObject, hDC, hOld
 
   invoke DeleteDC, memDC
