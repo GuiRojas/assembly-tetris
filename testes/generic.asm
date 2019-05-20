@@ -80,7 +80,7 @@
         matval        db 1 dup (?)
 
         posX    dd 128
-        posY    dd 0
+        posY    dd 32
 
         posX1    dd 0
         posY1    dd 0
@@ -93,6 +93,7 @@
 
     .data?
         iTimer  dd ?
+        posAux  dd ?
 
 
 ; #########################################################################
@@ -129,7 +130,14 @@ igualaBlocos proc uses eax
   ret  
 igualaBlocos endp
 
-
+getMult32 proc uses edx eax bx
+xor     edx, edx
+mov     eax, posAux
+mov     bx, 32
+div     bx
+mov     posAux, eax
+ret
+getMult32 endp 
 
 ;////////// tutorial matriz /////////////////////////////////////////////////
 ;a matriz tem tamanho 10 no X e 25 no Y
@@ -337,21 +345,18 @@ WndProc proc hWin   :DWORD,
         add posY, 32
       .endif
 
-      .if posY >= 544
+      .if posY >= 544 || posY1 >= 544 || posY2 >= 544 || posY3 >= 544
         invoke  InvalidateRect, hWin, NULL, FALSE
 
         invoke  BeginPaint, hWin, ADDR Ps
         mov     hDC, eax
         invoke  EndPaint, hWin, ADDR Ps
-        mov   posY, 0
+        mov   posY, 32
         mov   posX, 128
 
-      .elseif
-
-        invoke  InvalidateRect, hWin, NULL, TRUE
-
       .endif
-
+      
+      invoke  InvalidateRect, hWin, NULL, TRUE
       
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
@@ -460,7 +465,8 @@ direita:
   sub posY1, 32
   add posX2, 32
   add posY3, 32
-fimA:
+fimA: 
+  ;           0-32 = V
   .if posX >= 1989214176 || posX1 >= 1989214176 || posX2 >= 1989214176 || posX3 >= 1989214176 
     add posX, 32
     jmp dnv
