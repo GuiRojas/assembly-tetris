@@ -348,14 +348,16 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
 
   .endif
   
-direita:
-invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+esquerda:
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
     
   add posY, 32
   invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+
   add posY, 32
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+
   sub posY, 32
   sub posY, 32
 
@@ -368,29 +370,35 @@ baixo:
   invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+ 
   sub posY, 32
 
   jmp fimA
 
 cima:
+  add posY, 32
   invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
   
   add posY, 32
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+
+  sub posY, 32
   sub posY, 32
 
   jmp fimA
 
-esquerda:
+direita:
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
     
   add posY, 32
   invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+
   add posY, 32
   invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  
   sub posY, 32
   sub posY, 32
 
