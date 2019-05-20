@@ -71,6 +71,8 @@
 
         posicaoPeca   dd 0
 
+        timerDesce    dd 0
+
     .data?
         iTimer  dd ?
         posX    dd ?
@@ -135,8 +137,8 @@ WinMain proc hInst     :DWORD,
         ; Centre window at following size
         ;================================
 
-        mov Wwd, 500
-        mov Wht, 350
+        mov Wwd, 320
+        mov Wht, 640
 
         invoke GetSystemMetrics,SM_CXSCREEN ; get screen width in pixels
         invoke TopXY,Wwd,eax
@@ -249,7 +251,12 @@ WndProc proc hWin   :DWORD,
 
       invoke  KillTimer, hWin, iTimer
       inc     posX
-      add     posY, 2
+      add     timerDesce, 2
+
+      .if timerDesce == 20
+        mov timerDesce, 0
+        add posY, 32
+      .endif
 
       .if posY == 202 
 
