@@ -79,7 +79,7 @@
         maty          db 0
         matval        db 1 dup (?)
 
-        posX    dd 0
+        posX    dd 128
         posY    dd 0
 
         posX1    dd 0
@@ -213,7 +213,7 @@ WinMain proc hInst     :DWORD,
         ;================================
 
         mov Wwd, 340
-        mov Wht, 606
+        mov Wht, 618 
 
         invoke GetSystemMetrics,SM_CXSCREEN ; get screen width in pixels
         invoke TopXY,Wwd,eax
@@ -274,12 +274,7 @@ WndProc proc hWin   :DWORD,
   
     ;======== menu commands ========
 
-        .if wParam == 1000
-            invoke SendMessage,hWin,WM_SYSCOMMAND,SC_CLOSE,NULL
-        .elseif wParam == 1900
-            szText TheMsg,"Assembler, Puro & Simples"
-            invoke MessageBox,hWin,ADDR TheMsg,ADDR szDisplayName,MB_OK
-        .endif
+        
 
     ;====== end menu commands ======
 
@@ -316,15 +311,17 @@ WndProc proc hWin   :DWORD,
         .endif
         
       .elseif wParam == VK_RIGHT
-        add posX, 32
 
-        ;fazer logica funcional dps
+        .if posX < 288 && posX1 < 288 && posX2 < 288 && posX3 < 288
+          add posX, 32
+        .endif       
         
         
       .elseif wParam == VK_LEFT
-        sub posX, 32
 
-        ;fazer logica funcional dps
+        .if posX > 0 && posX1 > 0 && posX2 > 0 && posX3 > 0
+          sub posX, 32
+        .endif  
 
       .endif
 
@@ -340,17 +337,18 @@ WndProc proc hWin   :DWORD,
         add posY, 32
       .endif
 
-      .if posY == 544
+      .if posY >= 544
         invoke  InvalidateRect, hWin, NULL, FALSE
 
         invoke  BeginPaint, hWin, ADDR Ps
         mov     hDC, eax
         invoke  EndPaint, hWin, ADDR Ps
         mov   posY, 0
+        mov   posX, 128
 
       .elseif
 
-      invoke  InvalidateRect, hWin, NULL, TRUE
+        invoke  InvalidateRect, hWin, NULL, TRUE
 
       .endif
 
@@ -408,7 +406,7 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
 
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
-
+dnv:
   .if posicaoPeca == 0
     jmp direita
 
@@ -463,7 +461,14 @@ direita:
   add posX2, 32
   add posY3, 32
 fimA:
-  
+  .if posX >= 1989214176 || posX1 >= 1989214176 || posX2 >= 1989214176 || posX3 >= 1989214176 
+    add posX, 32
+    jmp dnv
+  .endif
+  .if posX > 288 || posX1 > 288 || posX2 > 288 || posX3 > 288
+    sub posX, 32
+    jmp dnv
+  .endif
   invoke TransparentBlt, hDC, posX,  posY,  32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, posX1, posY1, 32, 32, memDC, 0, 160, 32, 32, TRUE
   invoke TransparentBlt, hDC, posX2, posY2, 32, 32, memDC, 0, 160, 32, 32, TRUE
