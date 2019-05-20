@@ -155,6 +155,50 @@
     .code
 
 
+;////////// tutorial matriz /////////////////////////////////////////////////
+;a matriz tem tamanho 10 no X e 25 no Y
+;para usar os procedimentos, basta pensar:
+;matriz(x,y)  --->
+;mov matx, X    +   mov maty, Y
+;valores usam a var matval
+;exemplos de uso:
+;SETTAR VALOR          GETTAR VALOR         <--------------------------------
+;mov matx,2            mov matx,2
+;mov maty,4            mov maty,4
+;mov matval, 80        call getMatriz
+;call setMatriz        mov al, matval
+;////////////////////////////////////////////////////////////////////////////
+getMatriz proc uses ax cx
+    xor eax, eax            ;limpa registrador
+    mov al, maty            ;move valor Y
+    mov cx, 4               ;move tamanho da linha
+    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
+    xor cx,cx               ;limpa cx
+    mov cl, matx            ;move valor X
+    add ax, cx              ;soma à posição final
+    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
+    add edi, eax            ;soma pra posição da matriz a posição desejada
+    mov al, byte ptr[edi]   ;coloca o valor da posição no al
+    mov matval, al          ;move al pra variavel desejada
+    ret                     ;fim
+getMatriz endp
+
+setMatriz proc uses ax cx
+    xor eax, eax            ;limpa registrador
+    mov al, maty            ;move valor Y
+    mov cx, 4               ;move tamanho da linha
+    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
+    xor cx,cx               ;limpa cx
+    mov cl, matx            ;move valor X
+    add ax, cx              ;soma à posição final
+    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
+    add edi, eax            ;soma pra posição da matriz a posição desejada
+    ;coloca o valor da matriz no edi
+    mov al, matval
+    mov byte ptr[edi], al
+    ret      
+setMatriz endp
+
 getrandom proc
   gerar:
     push eax
