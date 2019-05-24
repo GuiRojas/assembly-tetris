@@ -50,7 +50,6 @@
 ; #########################################################################
 
 ;CONSTANTES
-;O ROMANI CARREGOU ESTE PROJETO, POIS SEM SUA CONTRIBUIÇÃO AO JOGAR NO CELULAR O ___TEMPO TODO___, NÃO CONSEGUIRIAMOS CHEGAR AQUI
         desenho1 equ  100
         desenho2 equ  101
         mina     equ  102
@@ -69,11 +68,13 @@
 
         hBmpDesenho1  dd 0
 
-        posicaoPeca   dd 0
+        posicaoPeca   db 0
         tipoPeca      db 1
 
         timerDesce    dd 0
         
+        ultimaRot     db 0
+
         matrix        dd 4*10*20   dup(0)  
         matx          dd 0
         maty          dd 0
@@ -335,6 +336,8 @@ WndProc proc hWin   :DWORD,
     .elseif uMsg == WM_KEYUP
 
       .if wParam == VK_UP
+        mov   al,posicaoPeca
+        mov   ultimaRot,al
         dec   posicaoPeca
 
         .if posicaoPeca == -1
@@ -342,6 +345,8 @@ WndProc proc hWin   :DWORD,
         .endif
 
       .elseif wParam == VK_DOWN
+        mov   al,posicaoPeca
+        mov   ultimaRot,al
         inc   posicaoPeca
 
         .if posicaoPeca == 4
@@ -350,16 +355,106 @@ WndProc proc hWin   :DWORD,
         
       .elseif wParam == VK_RIGHT
 
+        ;se o bloco está dentro da tela
         .if posX < 9 && posX1 < 9 && posX2 < 9 && posX3 < 9
+
+          ;verifica se n tem bloco no caminho
+          ;bloco 1
+          mov eax,posX
+          mov matx,eax
+          inc matx
+          mov eax,posY
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_right
+          .endif
+          ;bloco 2
+          mov eax,posX1
+          mov matx,eax
+          inc matx
+          mov eax,posY1
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_right
+          .endif
+          ;bloco 3
+          mov eax,posX2
+          mov matx,eax
+          inc matx
+          mov eax,posY2
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_right
+          .endif
+          ;bloco 4
+          mov eax,posX3
+          mov matx,eax
+          inc matx
+          mov eax,posY3
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_right
+          .endif
           inc posX
-        .endif       
+          n_anda_right:
+        .endif  
+        
         
         
       .elseif wParam == VK_LEFT
 
+        ;se o bloco está dentro da tela
         .if posX > 0 && posX1 > 0 && posX2 > 0 && posX3 > 0
+
+          ;verifica se n tem bloco no caminho
+          ;bloco 1
+          mov eax,posX
+          mov matx,eax
+          dec matx
+          mov eax,posY
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_left
+          .endif
+          ;bloco 2
+          mov eax,posX1
+          mov matx,eax
+          dec matx
+          mov eax,posY1
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_left
+          .endif
+          ;bloco 3
+          mov eax,posX2
+          mov matx,eax
+          dec matx
+          mov eax,posY2
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_left
+          .endif
+          ;bloco 4
+          mov eax,posX3
+          mov matx,eax
+          dec matx
+          mov eax,posY3
+          mov maty,eax
+          call getMatriz
+          .if matval !=0
+            jmp n_anda_left
+          .endif
           sub posX, 1
+          n_anda_left:
         .endif  
+       
 
       .endif
 
@@ -371,9 +466,55 @@ WndProc proc hWin   :DWORD,
       inc timerDesce
 
       
+      ;verifica se tem algo na matriz
+      ;bloco1
+      mov eax,posX
+      mov matx,eax
+      mov eax,posY
+      mov maty,eax
+      inc maty
+      call getMatriz
+      .if matval!=0
+        jmp insere
+      .endif
+      ;bloco2
+      mov eax,posX1
+      mov matx,eax
+      mov eax,posY1
+      mov maty,eax
+      inc maty
+      call getMatriz
+      .if matval!=0
+        jmp insere
+      .endif
+      ;bloco3
+      mov eax,posX2
+      mov matx,eax
+      mov eax,posY2
+      mov maty,eax
+      inc maty
+      call getMatriz
+      .if matval!=0
+        jmp insere
+      .endif
+      ;bloco4
+      mov eax,posX3
+      mov matx,eax
+      mov eax,posY3
+      mov maty,eax
+      inc maty
+      call getMatriz
+      .if matval!=0
+        jmp insere
+      .endif
 
+      ;verifica se chegou no final da tela
       .if posY >= 16 || posY1 >= 16 || posY2 >= 16 || posY3 >=16
+         jmp insere
+      .endif
+      jmp dpsInsere
 
+      insere:
         invoke  BeginPaint, hWin, ADDR Ps
         mov     hDC, eax
         invoke  EndPaint, hWin, ADDR Ps
@@ -381,8 +522,8 @@ WndProc proc hWin   :DWORD,
         call insereMat
         mov   posY, 1
         mov   posX, 4
-
-      .endif
+      dpsInsere:
+      
 
       .if timerDesce == 3
         mov timerDesce, 0
@@ -506,6 +647,50 @@ fimA:
   .endif
   .if posX > 9 || posX1 > 9 || posX2 > 9 || posX3 > 9
     sub posX, 1
+    jmp dnv
+  .endif
+  ;verifica se entrou em um bloco da matriz
+  mov eax,posX
+  mov matx,eax
+  mov eax,posY
+  mov maty,eax
+  call getMatriz
+  .if matval !=0
+    mov al,ultimaRot
+    mov posicaoPeca,al
+    jmp dnv
+  .endif
+  ;bloco 2
+  mov eax,posX1
+  mov matx,eax
+  mov eax,posY1
+  mov maty,eax
+  call getMatriz
+  .if matval !=0
+    mov al,ultimaRot
+    mov posicaoPeca,al
+    jmp dnv
+  .endif
+  ;bloco 3
+  mov eax,posX2
+  mov matx,eax
+  mov eax,posY2
+  mov maty,eax
+  call getMatriz
+  .if matval !=0
+    mov al,ultimaRot
+    mov posicaoPeca,al
+    jmp dnv
+  .endif
+  ;bloco 4
+  mov eax,posX3
+  mov matx,eax
+  mov eax,posY3
+  mov maty,eax
+  call getMatriz
+  .if matval !=0
+    mov al,ultimaRot
+    mov posicaoPeca,al
     jmp dnv
   .endif
 
