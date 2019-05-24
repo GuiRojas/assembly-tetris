@@ -1,3 +1,11 @@
+;//////////////////////////////////////////////////////////////////////////////////
+;feito por:
+;17182 guilherme rojas ribeiro
+;17176 francisco luiz maian
+;17189 lucas alvim romani
+;para o prof sergio na matéria 'linguagem de montagem'
+;todos direitos reservados -- 2019
+;//////////////////////////////////////////////////////////////////////////////////
       .386
       .model flat, stdcall
       option casemap :none
@@ -62,7 +70,7 @@
         TIMER_MAX EQU 100
 
     .data
-        szDisplayName db "Primeiro Programa",0
+        szDisplayName db "TETRIS",0
         CommandLine   dd 0
         hWnd          dd 0
         hInstance     dd 0
