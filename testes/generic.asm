@@ -70,14 +70,14 @@
         hBmpDesenho1  dd 0
 
         posicaoPeca   dd 0
-        tipoPeca      dd 1
+        tipoPeca      db 1
 
         timerDesce    dd 0
         
-        matrix        dd  10*20   dup(0)  
+        matrix        dd 4*10*20   dup(0)  
         matx          dd 0
         maty          dd 0
-        matval        dd 1 dup (?)
+        matval        db 1 dup (?)
 
         aux32X dd 0
         aux32Y dd 0
@@ -104,16 +104,6 @@
     .code
 
 start:
-    mov matx,4
-    mov maty,3
-    mov eax, 64
-    mov matval, eax
-    call setMatriz  
-    mov matx,4
-    mov maty,5
-    mov eax, 64
-    mov matval, eax
-    call setMatriz  
 
     invoke GetModuleHandle, NULL ; provides the instance handle
     mov hInstance, eax
@@ -145,12 +135,37 @@ igualaBlocos proc uses eax
 igualaBlocos endp
 
 insereMat proc uses eax
+  ;bloco1
   mov eax, posX
   mov matx,eax
-  mov eax,maty
+  mov eax,posY
   mov maty,eax
-  mov eax,tipoPeca
-  mov matval,eax
+  mov al,tipoPeca
+  mov matval,al
+  call setMatriz
+  ;bloco2
+  mov eax, posX1
+  mov matx,eax
+  mov eax,posY1
+  mov maty,eax
+  mov al,tipoPeca
+  mov matval,al
+  call setMatriz
+  ;bloco3
+  mov eax, posX2
+  mov matx,eax
+  mov eax,posY2
+  mov maty,eax
+  mov al,tipoPeca
+  mov matval,al
+  call setMatriz
+  ;bloco4
+  mov eax, posX3
+  mov matx,eax
+  mov eax,posY3
+  mov maty,eax
+  mov al,tipoPeca
+  mov matval,al
   call setMatriz
   ret
 insereMat endp
@@ -177,8 +192,8 @@ getMatriz proc uses ax cx
     add eax, ecx              ;soma à posição final
     mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz
     add edi, eax              ;soma pra posição da matriz a posição desejada
-    mov eax, dword ptr[edi]    ;coloca o valor da posição no al
-    mov matval, eax           ;move al pra variavel desejada
+    mov al, byte ptr[edi]     ;coloca o valor da posição no al
+    mov matval, al           ;move al pra variavel desejada
     ret                       ;fim
 getMatriz endp
 
@@ -193,8 +208,8 @@ setMatriz proc uses ax cx
     mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz
     add edi, eax              ;soma pra posição da matriz a posição desejada
     ;coloca o valor da matriz no edi
-    mov eax, matval
-    mov dword ptr[edi], eax
+    mov al, matval
+    mov byte ptr[edi], al
     ret      
 setMatriz endp
 
@@ -355,23 +370,24 @@ WndProc proc hWin   :DWORD,
       invoke  KillTimer, hWin, iTimer
       inc timerDesce
 
-      .if timerDesce == 3
-        mov timerDesce, 0
-        inc posY
-      .endif
+      
 
-      .if posY >= 17 || posY1 >= 17 || posY2 >= 17 || posY3 >=17
+      .if posY >= 16 || posY1 >= 16 || posY2 >= 16 || posY3 >=16
 
         invoke  BeginPaint, hWin, ADDR Ps
         mov     hDC, eax
         invoke  EndPaint, hWin, ADDR Ps
 
-        ;call insereMat
+        call insereMat
         mov   posY, 1
         mov   posX, 4
 
       .endif
-      
+
+      .if timerDesce == 3
+        mov timerDesce, 0
+        inc posY
+      .endif     
       
       invoke  InvalidateRect, hWin, NULL, TRUE
       
