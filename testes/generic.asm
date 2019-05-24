@@ -50,7 +50,7 @@
 ; #########################################################################
 
 ;CONSTANTES
-
+;O ROMANI CARREGOU ESTE PROJETO, POIS SEM SUA CONTRIBUIÇÃO AO JOGAR NO CELULAR O ___TEMPO TODO___, NÃO CONSEGUIRIAMOS CHEGAR AQUI
         desenho1 equ  100
         desenho2 equ  101
         mina     equ  102
@@ -70,17 +70,20 @@
         hBmpDesenho1  dd 0
 
         posicaoPeca   dd 0
-        tipoPeca      db 0
+        tipoPeca      dd 1
 
         timerDesce    dd 0
         
-        matrix      db  4*4*2   dup(0)  
-        matx          db 0
-        maty          db 0
-        matval        db 1 dup (?)
+        matrix        dd  10*20   dup(0)  
+        matx          dd 0
+        maty          dd 0
+        matval        dd 1 dup (?)
 
-        posX    dd 128
-        posY    dd 32
+        aux32X dd 0
+        aux32Y dd 0
+
+        posX    dd 4
+        posY    dd 1
 
         posX1    dd 0
         posY1    dd 0
@@ -101,6 +104,17 @@
     .code
 
 start:
+    mov matx,4
+    mov maty,3
+    mov eax, 64
+    mov matval, eax
+    call setMatriz  
+    mov matx,4
+    mov maty,5
+    mov eax, 64
+    mov matval, eax
+    call setMatriz  
+
     invoke GetModuleHandle, NULL ; provides the instance handle
     mov hInstance, eax
 
@@ -130,14 +144,16 @@ igualaBlocos proc uses eax
   ret  
 igualaBlocos endp
 
-getMult32 proc uses edx eax bx
-xor     edx, edx
-mov     eax, posAux
-mov     bx, 32
-div     bx
-mov     posAux, eax
-ret
-getMult32 endp 
+insereMat proc uses eax
+  mov eax, posX
+  mov matx,eax
+  mov eax,maty
+  mov maty,eax
+  mov eax,tipoPeca
+  mov matval,eax
+  call setMatriz
+  ret
+insereMat endp
 
 ;////////// tutorial matriz /////////////////////////////////////////////////
 ;a matriz tem tamanho 10 no X e 25 no Y
@@ -153,33 +169,32 @@ getMult32 endp
 ;call setMatriz        mov al, matval
 ;/////////////////////////////////////////////////////////////////////////////
 getMatriz proc uses ax cx
-    xor eax, eax            ;limpa registrador
-    mov al, maty            ;move valor Y
-    mov cx, 4               ;move tamanho da linha
-    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
-    xor cx,cx               ;limpa cx
-    mov cl, matx            ;move valor X
-    add ax, cx              ;soma à posição final
-    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
-    add edi, eax            ;soma pra posição da matriz a posição desejada
-    mov al, byte ptr[edi]   ;coloca o valor da posição no al
-    mov matval, al          ;move al pra variavel desejada
-    ret                     ;fim
+    xor eax, eax              ;limpa registrador
+    mov eax, maty             ;move valor Y
+    mov ecx, 10               ;move tamanho da linha
+    mul ecx                   ;multiplica os valores (anda pela maior dimensão do vetor)
+    mov ecx, matx             ;move valor X
+    add eax, ecx              ;soma à posição final
+    mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz
+    add edi, eax              ;soma pra posição da matriz a posição desejada
+    mov eax, dword ptr[edi]    ;coloca o valor da posição no al
+    mov matval, eax           ;move al pra variavel desejada
+    ret                       ;fim
 getMatriz endp
 
 setMatriz proc uses ax cx
-    xor eax, eax            ;limpa registrador
-    mov al, maty            ;move valor Y
-    mov cx, 4               ;move tamanho da linha
-    mul cx                  ;multiplica os valores (anda pela maior dimensão do vetor)
-    xor cx,cx               ;limpa cx
-    mov cl, matx            ;move valor X
-    add ax, cx              ;soma à posição final
-    mov edi, OFFSET matrix  ;move pro EDI a posição da memória da matriz
-    add edi, eax            ;soma pra posição da matriz a posição desejada
+    xor eax, eax              ;limpa registrador
+    mov eax, maty             ;move valor Y
+    mov ecx, 10               ;move tamanho da linha
+    mul ecx                   ;multiplica os valores (anda pela maior dimensão do vetor)
+    xor ecx,ecx               ;limpa cx
+    mov ecx, matx             ;move valor X
+    add eax, ecx              ;soma à posição final
+    mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz
+    add edi, eax              ;soma pra posição da matriz a posição desejada
     ;coloca o valor da matriz no edi
-    mov al, matval
-    mov byte ptr[edi], al
+    mov eax, matval
+    mov dword ptr[edi], eax
     ret      
 setMatriz endp
 
@@ -221,7 +236,7 @@ WinMain proc hInst     :DWORD,
         ;================================
 
         mov Wwd, 340
-        mov Wht, 618 
+        mov Wht, 586 
 
         invoke GetSystemMetrics,SM_CXSCREEN ; get screen width in pixels
         invoke TopXY,Wwd,eax
@@ -320,15 +335,15 @@ WndProc proc hWin   :DWORD,
         
       .elseif wParam == VK_RIGHT
 
-        .if posX < 288 && posX1 < 288 && posX2 < 288 && posX3 < 288
-          add posX, 32
+        .if posX < 9 && posX1 < 9 && posX2 < 9 && posX3 < 9
+          inc posX
         .endif       
         
         
       .elseif wParam == VK_LEFT
 
         .if posX > 0 && posX1 > 0 && posX2 > 0 && posX3 > 0
-          sub posX, 32
+          sub posX, 1
         .endif  
 
       .endif
@@ -336,25 +351,27 @@ WndProc proc hWin   :DWORD,
 ; ########################################################################
 
     .elseif uMsg == WM_TIMER ;TIMER
-
+      
       invoke  KillTimer, hWin, iTimer
       inc timerDesce
 
       .if timerDesce == 3
         mov timerDesce, 0
-        add posY, 32
+        inc posY
       .endif
 
-      .if posY >= 544 || posY1 >= 544 || posY2 >= 544 || posY3 >= 544
-        invoke  InvalidateRect, hWin, NULL, FALSE
+      .if posY >= 17 || posY1 >= 17 || posY2 >= 17 || posY3 >=17
 
         invoke  BeginPaint, hWin, ADDR Ps
         mov     hDC, eax
         invoke  EndPaint, hWin, ADDR Ps
-        mov   posY, 32
-        mov   posX, 128
+
+        ;call insereMat
+        mov   posY, 1
+        mov   posX, 4
 
       .endif
+      
       
       invoke  InvalidateRect, hWin, NULL, TRUE
       
@@ -431,9 +448,9 @@ esquerda:
   ;2X
   ; 3
   call igualaBlocos
-  sub posY1, 32
-  sub posX2, 32
-  add posY3, 32
+  sub posY1, 1
+  sub posX2, 1
+  add posY3, 1
 
   jmp fimA
 
@@ -441,9 +458,9 @@ baixo:
   ;1X2
   ; 3
   call igualaBlocos
-  sub posX1, 32
-  add posX2, 32
-  add posY3, 32
+  sub posX1, 1
+  add posX2, 1
+  add posY3, 1
 
   jmp fimA
 
@@ -451,9 +468,9 @@ cima:
   ; 2
   ;1X3
   call igualaBlocos
-  sub posX1, 32
-  sub posY2, 32
-  add posX3, 32
+  sub posX1, 1
+  sub posY2, 1
+  add posX3, 1
 
   jmp fimA
 
@@ -462,23 +479,113 @@ direita:
   ; X2
   ; 3
   call igualaBlocos
-  sub posY1, 32
-  add posX2, 32
-  add posY3, 32
+  sub posY1, 1
+  add posX2, 1
+  add posY3, 1
 fimA: 
-  ;           0-32 = V
-  .if posX >= 1989214176 || posX1 >= 1989214176 || posX2 >= 1989214176 || posX3 >= 1989214176 
-    add posX, 32
+  ;          VVV se está nessas condições, é pq a peça está nos negativos (-1, -2,...) VVV
+  .if posX >= 1989210000 || posX1 >= 1989210000 || posX2 >= 1989210000 || posX3 >= 1989210000
+    inc posX
     jmp dnv
   .endif
-  .if posX > 288 || posX1 > 288 || posX2 > 288 || posX3 > 288
-    sub posX, 32
+  .if posX > 9 || posX1 > 9 || posX2 > 9 || posX3 > 9
+    sub posX, 1
     jmp dnv
   .endif
-  invoke TransparentBlt, hDC, posX,  posY,  32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, posX1, posY1, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, posX2, posY2, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, posX3, posY3, 32, 32, memDC, 0, 160, 32, 32, TRUE
+
+  ;desenha todas as peças da matriz
+  ;mov edx, 0 ;y
+  ;vfLinha:
+  ;cmp edx, 18
+  ;jg dps_verif   
+  ;mov ebx, 0 ;x
+  ;vfColuna:
+  ;cmp ebx,10
+  ;jg dps_verifC
+  
+  mov matx,0
+  mov maty,0
+  desenhaMat:
+  call getMatriz
+  .if matval != 0     
+    ;desenha bloco
+    mov ecx, 32
+    mov eax, matx
+    mul ecx
+    mov aux32X, eax
+    mov eax, maty
+    mul ecx
+    mov aux32Y, eax       
+
+    push eax
+    push ebx
+    push ecx
+    push edx
+    invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+  .endif
+
+  .if maty==17
+    .if matx==10
+      jmp dpsDesenhaMat
+    .endif
+    mov maty, 0
+    inc matx
+    jmp desenhaMat
+  .endif
+  inc maty
+  jmp desenhaMat  
+  dpsDesenhaMat:
+  
+  ;inc ebx
+  ;jmp vfColuna
+  ;dps_verifC:
+  ;inc edx
+  ;jmp vfLinha
+  ;dps_verif:
+
+  ;desenha os blocos da peça atual
+  ;bloco 1
+  mov ecx, 32
+  mov eax, posX
+  mul ecx
+  mov aux32X, eax
+  mov eax, posY
+  mul ecx
+  mov aux32Y, eax
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  ;bloco 2
+  mov ecx, 32
+  mov eax, posX1
+  mul ecx
+  mov aux32X, eax
+  mov eax, posY1
+  mul ecx
+  mov aux32Y, eax
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  ;bloco 3
+  mov ecx, 32
+  mov eax, posX2
+  mul ecx
+  mov aux32X, eax
+  mov eax, posY2
+  mul ecx
+  mov aux32Y, eax
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  ;bloco 4
+  mov ecx, 32
+  mov eax, posX3
+  mul ecx
+  mov aux32X, eax
+  mov eax, posY3
+  mul ecx
+  mov aux32Y, eax
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  ;////////
+
 
   invoke SelectObject, hDC, hOld
 
