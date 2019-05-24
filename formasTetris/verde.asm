@@ -69,6 +69,8 @@
 
         hBmpDesenho1  dd 0
 
+        posicaoPeca   dd 0
+
     .data?
         iTimer  dd ?
         posX    dd ?
@@ -223,6 +225,26 @@ WndProc proc hWin   :DWORD,
 
 ; ########################################################################
 
+    .elseif uMsg == WM_KEYUP
+
+      .if wParam == VK_LEFT
+        dec   posicaoPeca
+
+        .if posicaoPeca == -1
+          mov posicaoPeca, 3
+        .endif
+
+      .elseif wParam == VK_RIGHT
+        inc   posicaoPeca
+
+        .if posicaoPeca == 4
+          mov posicaoPeca, 0
+        .endif
+
+      .endif
+
+; ########################################################################
+
     .elseif uMsg == WM_TIMER ;TIMER
 
       invoke  KillTimer, hWin, iTimer
@@ -305,57 +327,75 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
 
-  jmp direita
+  .if posicaoPeca == 0
+    jmp direita
 
-esquerda:
-invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  .elseif posicaoPeca == 1
+    jmp cima
+
+  .elseif posicaoPeca == 2
+    jmp esquerda
+
+  .elseif posicaoPeca == 3
+    jmp baixo
+
+  .endif
+  
+baixo:
+  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
     
   add posY, 32
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+
   add posY, 32
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+
+  sub posY, 32
+  sub posY, 32
+
+  jmp fimA
+
+esquerda:    
+  add posY, 32
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+  
+
+  add posY, 32
+  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+ 
   sub posY, 32
   sub posY, 32
 
   jmp fimA
 
 cima:
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-    
-  add posY, 32
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  sub posY, 32
-
-  jmp fimA
-
-baixo:
-  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
   
   add posY, 32
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+
+  add posY, 32
+  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+
+  sub posY, 32
   sub posY, 32
 
   jmp fimA
 
-direita:
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-    
+direita:    
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+
   add posY, 32
-  invoke TransparentBlt, hDC, 74, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  add posY, 32
-  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 160, 32, 32, TRUE
-  sub posY, 32
+  invoke TransparentBlt, hDC, 10, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
+  invoke TransparentBlt, hDC, 42, posY, 32, 32, memDC, 0, 64, 32, 32, TRUE
   sub posY, 32
 
 fimA:
-
-  
   invoke SelectObject, hDC, hOld
 
   invoke DeleteDC, memDC
