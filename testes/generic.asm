@@ -50,8 +50,6 @@
 ; #########################################################################
 
 ;CONSTANTES
-        desenho1 equ  100
-        desenho2 equ  101
         mina     equ  102
 
         CREF_TRANSPARENT  EQU 0FF00FFh
@@ -75,7 +73,7 @@
         
         ultimaRot     db 0
 
-        matrix        dd 4*10*20   dup(0)  
+        matrix        dd 10*20   dup(0)  
         matx          dd 0
         maty          dd 0
         matval        db 1 dup (?)
@@ -168,9 +166,60 @@ insereMat proc uses eax
   mov al,tipoPeca
   mov matval,al
   call setMatriz
+
+  call verifLinha
   ret
 insereMat endp
 
+verifLinha proc
+  mov matx,0
+  mov maty,20
+  vfLinha:
+  call getMatriz
+  .if matval == 0 ;a linha n está cheia. . .    
+    jmp mudaLinha
+  .endif
+  jmp mudaColuna
+  mudaLinha:
+  .if maty == 1
+    jmp vfFim
+  .endif
+  dec maty
+  mov matx,0
+  jmp vfLinha
+  mudaColuna:
+  .if matx == 9
+    jmp limpaLinha
+  .endif
+  inc matx
+  jmp vfLinha
+
+  limpaLinha:
+  mov matx,0
+  ;move linha de cima para baixo
+  moveBlocoBaixo:  
+  .if matx == 10
+    .if maty == 1
+      mov maty,20
+      mov matx,0
+      jmp vfLinha
+    .endif
+    mov matx,0
+    dec maty    
+    jmp moveBlocoBaixo
+  .endif
+
+  dec maty
+  call getMatriz
+  inc maty
+  call setMatriz
+
+  inc matx
+  jmp moveBlocoBaixo
+
+  vfFim:
+  ret
+verifLinha endp
 ;////////// tutorial matriz /////////////////////////////////////////////////
 ;a matriz tem tamanho 10 no X e 25 no Y
 ;para usar os procedimentos, basta pensar:
@@ -252,7 +301,7 @@ WinMain proc hInst     :DWORD,
         ;================================
 
         mov Wwd, 340
-        mov Wht, 586 
+        mov Wht, 618 
 
         invoke GetSystemMetrics,SM_CXSCREEN ; get screen width in pixels
         invoke TopXY,Wwd,eax
@@ -343,6 +392,7 @@ WndProc proc hWin   :DWORD,
         .if posicaoPeca == -1
           mov posicaoPeca, 3
         .endif
+        dec timerDesce
 
       .elseif wParam == VK_DOWN
         mov   al,posicaoPeca
@@ -352,6 +402,7 @@ WndProc proc hWin   :DWORD,
         .if posicaoPeca == 4
           mov posicaoPeca, 0
         .endif
+        dec timerDesce
         
       .elseif wParam == VK_RIGHT
 
@@ -453,8 +504,7 @@ WndProc proc hWin   :DWORD,
           .endif
           sub posX, 1
           n_anda_left:
-        .endif  
-       
+        .endif            
 
       .endif
 
@@ -509,27 +559,32 @@ WndProc proc hWin   :DWORD,
       .endif
 
       ;verifica se chegou no final da tela
-      .if posY >= 16 || posY1 >= 16 || posY2 >= 16 || posY3 >=16
+      .if posY >= 17 || posY1 >= 17 || posY2 >= 17 || posY3 >=17
          jmp insere
       .endif
+
       jmp dpsInsere
 
       insere:
-        invoke  BeginPaint, hWin, ADDR Ps
-        mov     hDC, eax
-        invoke  EndPaint, hWin, ADDR Ps
 
         call insereMat
         mov   posY, 1
         mov   posX, 4
+        jmp dpstick
       dpsInsere:
       
 
-      .if timerDesce == 3
+      .if timerDesce >= 2
         mov timerDesce, 0
         inc posY
-      .endif     
+      .endif
+
+      dpstick:
       
+      invoke  BeginPaint, hWin, ADDR Ps
+      mov     hDC, eax
+      invoke  EndPaint, hWin, ADDR Ps
+
       invoke  InvalidateRect, hWin, NULL, TRUE
       
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
