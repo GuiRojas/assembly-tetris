@@ -5,12 +5,15 @@
 ; #########################################################################
 
       include \masm32\include\windows.inc
+      include \masm32\macros\macros.asm
 
+      include \masm32\include\masm32.inc
       include \masm32\include\user32.inc
       include \masm32\include\kernel32.inc
       include \masm32\include\gdi32.inc
       include \masm32\include\msimg32.inc
 
+      includelib \masm32\lib\masm32.lib
       includelib \masm32\lib\user32.lib
       includelib \masm32\lib\kernel32.lib
       includelib \masm32\lib\gdi32.lib
@@ -67,7 +70,7 @@
         hBmpDesenho1  dd 0
 
         posicaoPeca   db 0
-        tipoPeca      db 1
+        tipoPeca      db 6
 
         timerDesce    dd 0
         
@@ -80,6 +83,8 @@
 
         aux32X dd 0
         aux32Y dd 0
+
+        cor    dd 0
 
         posX    dd 4
         posY    dd 1
@@ -119,6 +124,23 @@ start:
     invoke ExitProcess,eax       ; cleanup & return to operating system
 
 ; #########################################################################
+getrandom proc uses eax
+  gerar:
+    invoke  GetTickCount
+    invoke  nseed, eax
+    invoke  nrandom, 8 ;gera um numero random de 0 a 8
+    ;geramos de 0 a 8 para que os numeros que nós queremos (1-7) se tornam equiprováveis
+    cmp eax,0
+    je gerar
+    cmp eax,8
+    je gerar
+    mov tipoPeca, al
+    ;//caso queiramos printar, precisamos de \/ no .data 
+    ;//                           randomnum  db  2 dup (?)
+    ;invoke  dwtoa, eax, offset randomnum ;double word to ascii
+    ;invoke  StdOut, offset randomnum     ;printa em console o valor
+    ret
+getrandom endp
 
 igualaBlocos proc uses eax
   mov eax, posX
@@ -379,6 +401,8 @@ WndProc proc hWin   :DWORD,
 
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
+      
+      call  getrandom
 
 ; ########################################################################
 
@@ -567,10 +591,11 @@ WndProc proc hWin   :DWORD,
 
       insere:
 
-        call insereMat
+        call  insereMat
         mov   posY, 1
         mov   posX, 4
-        jmp dpstick
+        call  getrandom
+        jmp   dpstick
       dpsInsere:
       
 
@@ -656,44 +681,164 @@ dnv:
   .endif
   
 esquerda:
-  ; 1
-  ;2X
-  ; 3
   call igualaBlocos
-  sub posY1, 1
-  sub posX2, 1
-  add posY3, 1
-
+  .if tipoPeca == 1     ;J
+    dec posY1
+    inc posY2
+    inc posY3
+    dec posX3
+  .elseif tipoPeca == 2 ;L
+    inc posY1
+    dec posY2
+    dec posY3
+    dec posX3
+  .elseif tipoPeca == 3 ;S
+    inc posY1
+    dec posX2
+    dec posX3
+    dec posY3
+  .elseif tipoPeca == 4 ;Z
+    dec posY1
+    dec posX2
+    dec posX3
+    inc posY3
+  .elseif tipoPeca == 5 ;O
+    inc posX1
+    inc posX2
+    inc posY2
+    inc posY3
+  .elseif tipoPeca == 6 ;T 
+    dec posY1
+    dec posX2
+    inc posY3
+  .elseif tipoPeca == 7 ;I
+    inc posY1
+    dec posY2
+    dec posY3
+    dec posY3
+  .endif
+ 
+    
   jmp fimA
 
 baixo:
-  ;1X2
-  ; 3
   call igualaBlocos
-  sub posX1, 1
-  add posX2, 1
-  add posY3, 1
+  .if tipoPeca == 1     ;J
+    dec posX1
+    inc posX2
+    inc posX3
+    inc posY3
+  .elseif tipoPeca == 2 ;L
+    inc posX1
+    dec posX2
+    dec posX3
+    inc posY3
+  .elseif tipoPeca == 3 ;S
+    inc posX1
+    inc posY2
+    inc posY3
+    dec posX3
+  .elseif tipoPeca == 4 ;Z
+    dec posX1
+    inc posY2
+    inc posY3
+    inc posX3
+  .elseif tipoPeca == 5 ;O
+    inc posX1
+    inc posX2
+    inc posY2
+    inc posY3
+  .elseif tipoPeca == 6 ;T 
+    dec posX1
+    inc posX2
+    inc posY3  
+  .elseif tipoPeca == 7 ;I
+    inc posX1
+    dec posX2
+    dec posX3
+    dec posX3
+  .endif
 
   jmp fimA
 
 cima:
-  ; 2
-  ;1X3
   call igualaBlocos
-  sub posX1, 1
-  sub posY2, 1
-  add posX3, 1
+  .if tipoPeca == 1     ;J
+    dec posX1
+    inc posX2
+    dec posX3
+    dec posY3
+  .elseif tipoPeca == 2 ;L
+    dec posX1
+    inc posX2
+    inc posX3
+    dec posY3
+  .elseif tipoPeca == 3 ;S
+    dec posX1
+    dec posY2
+    dec posY3
+    inc posX3
+  .elseif tipoPeca == 4 ;Z
+    inc posX1
+    dec posY2
+    dec posY3
+    dec posX3
+  .elseif tipoPeca == 5 ;O
+    inc posX1
+    inc posX2
+    inc posY2
+    inc posY3
+  .elseif tipoPeca == 6 ;T  
+    dec posX1
+    dec posY2
+    inc posX3 
+  .elseif tipoPeca == 7 ;I
+    dec posX1
+    inc posX2
+    inc posX3
+    inc posX3
+  .endif
 
   jmp fimA
 
 direita:
-  ; 1
-  ; X2
-  ; 3
   call igualaBlocos
-  sub posY1, 1
-  add posX2, 1
-  add posY3, 1
+  .if tipoPeca == 1     ;J
+    dec posY1
+    inc posY2
+    dec posY3
+    inc posX3
+  .elseif tipoPeca == 2 ;L
+    dec posY1
+    inc posY2
+    inc posY3
+    inc posX3
+  .elseif tipoPeca == 3 ;S
+    dec posY1
+    inc posX2
+    inc posX3
+    inc posY3
+  .elseif tipoPeca == 4 ;Z
+    inc posY1
+    inc posX2
+    inc posX3
+    dec posY3
+  .elseif tipoPeca == 5 ;O
+    inc posX1
+    inc posX2
+    inc posY2
+    inc posY3
+  .elseif tipoPeca == 6 ;T   
+    dec posY1
+    inc posX2
+    inc posY3
+  .elseif tipoPeca == 7 ;I
+    dec posY1
+    inc posY2
+    inc posY3
+    inc posY3
+  .endif
+  
 fimA: 
   ;          VVV se está nessas condições, é pq a peça está nos negativos (-1, -2,...) VVV
   .if posX >= 1989210000 || posX1 >= 1989210000 || posX2 >= 1989210000 || posX3 >= 1989210000
@@ -701,7 +846,7 @@ fimA:
     jmp dnv
   .endif
   .if posX > 9 || posX1 > 9 || posX2 > 9 || posX3 > 9
-    sub posX, 1
+    dec posX
     jmp dnv
   .endif
   ;verifica se entrou em um bloco da matriz
@@ -748,16 +893,6 @@ fimA:
     mov posicaoPeca,al
     jmp dnv
   .endif
-
-  ;desenha todas as peças da matriz
-  ;mov edx, 0 ;y
-  ;vfLinha:
-  ;cmp edx, 18
-  ;jg dps_verif   
-  ;mov ebx, 0 ;x
-  ;vfColuna:
-  ;cmp ebx,10
-  ;jg dps_verifC
   
   mov matx,0
   mov maty,0
@@ -777,7 +912,12 @@ fimA:
     push ebx
     push ecx
     push edx
-    invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+    xor eax,eax
+    mov al, matval
+    dec eax
+    mul ecx
+    mov cor, eax
+    invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, cor, 32, 32, TRUE
     pop edx
     pop ecx
     pop ebx
@@ -796,23 +936,21 @@ fimA:
   jmp desenhaMat  
   dpsDesenhaMat:
   
-  ;inc ebx
-  ;jmp vfColuna
-  ;dps_verifC:
-  ;inc edx
-  ;jmp vfLinha
-  ;dps_verif:
-
   ;desenha os blocos da peça atual
   ;bloco 1
   mov ecx, 32
+  xor eax,eax
+  mov al, tipoPeca
+  dec eax
+  mul ecx
+  mov cor, eax
   mov eax, posX
   mul ecx
   mov aux32X, eax
   mov eax, posY
   mul ecx
   mov aux32Y, eax
-  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, cor, 32, 32, TRUE
   ;bloco 2
   mov ecx, 32
   mov eax, posX1
@@ -821,7 +959,7 @@ fimA:
   mov eax, posY1
   mul ecx
   mov aux32Y, eax
-  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, cor, 32, 32, TRUE
   ;bloco 3
   mov ecx, 32
   mov eax, posX2
@@ -830,7 +968,7 @@ fimA:
   mov eax, posY2
   mul ecx
   mov aux32Y, eax
-  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, cor, 32, 32, TRUE
   ;bloco 4
   mov ecx, 32
   mov eax, posX3
@@ -839,7 +977,7 @@ fimA:
   mov eax, posY3
   mul ecx
   mov aux32Y, eax
-  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, 160, 32, 32, TRUE
+  invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, cor, 32, 32, TRUE
   ;////////
 
 
