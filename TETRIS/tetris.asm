@@ -61,7 +61,7 @@
 ; #########################################################################
 
 ;CONSTANTES
-        mina     equ  102
+        sheet     equ  102
 
         CREF_TRANSPARENT  EQU 0FF00FFh
         CREF_TRANSPARENT2 EQU 0FF0000h
@@ -74,41 +74,51 @@
         CommandLine   dd 0
         hWnd          dd 0
         hInstance     dd 0
-
         hBmpDesenho1  dd 0
 
-        posicaoPeca   db 0
-        tipoPeca      db 6
+        ;variaveis para controle de peça
+        posicaoPeca   db 0 ;sentido de rotação da peça (1-4)
+        tipoPeca      db 0 ;tipo de peça (1-7)
+        ultimaRot     db 0 ;auxiliar para rotações
 
-        timerDesce    dd 0
-        
-        ultimaRot     db 0
+        ;variaveis para controle de exibição na tela
+        timerDesce    dd 0        
 
+        ;matriz responsavel por armazenar peças já colocadas
         matrix        dd 10*20   dup(0)  
-        matx          dd 0
-        maty          dd 0
-        matval        db 1 dup (?)
+        matx          dd 0 ;indice X da matriz
+        maty          dd 0 ;indice Y da matriz
+        matval        db 1 dup (?) ;valor inserido/obtido da matriz
 
+        ;auxiliares para conversão de posição da peça para coordenadas gráficas absolutas
         aux32X dd 0
         aux32Y dd 0
-
+        
+        ;variavel para exibir a cor correta para cada peça na tela
         cor    dd 0
 
-        posX    dd 4
-        posY    dd 1
-
+        ;variaveis de posição para cada peça que o usuario está controlando
+        ;toda peça tetris (tetrimo) possui sempre 4 blocos
+        ;poderia ser um vetor, caso quisessemos otimizar mais, porém teriamos que re-trabalhar a lógica
+        posX     dd 0
+        posY     dd 0
         posX1    dd 0
         posY1    dd 0
-
         posX2    dd 0
         posY2    dd 0
-
         posX3    dd 0
         posY3    dd 0
 
+        ;flags de movimentação
+        movendo  db 0
+        virando  db 0
+        descendo db 0
+
+        gameover db 0
+
     .data?
+        ;variavel para uso de tinmer
         iTimer  dd ?
-        posAux  dd ?
 
 
 ; #########################################################################
@@ -120,7 +130,7 @@ start:
     invoke GetModuleHandle, NULL ; provides the instance handle
     mov hInstance, eax
 
-    invoke LoadBitmap, hInstance, mina
+    invoke LoadBitmap, hInstance, sheet
     mov hBmpDesenho1, eax
 
 
@@ -132,7 +142,9 @@ start:
     invoke ExitProcess,eax       ; cleanup & return to operating system
 
 ; #########################################################################
-getrandom proc uses eax
+;obtem um numero aleatorio de 1-7
+;como nesse programa é usado para gerar o tipo da peça, o 'retorno' vai direto no tipoPeca
+getrandom proc uses eax 
   gerar:
     invoke  GetTickCount
     invoke  nseed, eax
@@ -143,13 +155,11 @@ getrandom proc uses eax
     cmp eax,8
     je gerar
     mov tipoPeca, al
-    ;//caso queiramos printar, precisamos de \/ no .data 
-    ;//                           randomnum  db  2 dup (?)
-    ;invoke  dwtoa, eax, offset randomnum ;double word to ascii
-    ;invoke  StdOut, offset randomnum     ;printa em console o valor
     ret
 getrandom endp
 
+;move todos os 4 blocos para as coordenadas do bloco principal
+;usado na hora de rotacionar as peças
 igualaBlocos proc uses eax
   mov eax, posX
   mov posX1, eax
@@ -163,6 +173,7 @@ igualaBlocos proc uses eax
   ret  
 igualaBlocos endp
 
+;insere a peça atual na matriz
 insereMat proc uses eax
   ;bloco1
   mov eax, posX
@@ -196,29 +207,34 @@ insereMat proc uses eax
   mov al,tipoPeca
   mov matval,al
   call setMatriz
-
+  ;verifica se completou alguma linha
   call verifLinha
   ret
 insereMat endp
 
+;loopa por todas as linhas da matriz procurando peça
 verifLinha proc
+  ;verifica de baixo pra cima
   mov matx,0
   mov maty,20
+  ;verifica linha
   vfLinha:
   call getMatriz
   .if matval == 0 ;a linha n está cheia. . .    
     jmp mudaLinha
   .endif
   jmp mudaColuna
+  ;muda indice Y 
   mudaLinha:
-  .if maty == 1
+  .if maty == 1 ;se chegar na ultima linha
     jmp vfFim
   .endif
   dec maty
-  mov matx,0
+  mov matx,0 ;muda a linha
   jmp vfLinha
+  ;muda indice X
   mudaColuna:
-  .if matx == 9
+  .if matx == 9 ;se chegou no final, é pq n achou uma coluna vazia, logo, está cheia
     jmp limpaLinha
   .endif
   inc matx
@@ -226,10 +242,11 @@ verifLinha proc
 
   limpaLinha:
   mov matx,0
-  ;move linha de cima para baixo
+  ;move todas as linhas acima uma para baixo
   moveBlocoBaixo:  
   .if matx == 10
     .if maty == 1
+      ;reinicia verificação
       mov maty,20
       mov matx,0
       jmp vfLinha
@@ -251,7 +268,7 @@ verifLinha proc
   ret
 verifLinha endp
 ;////////// tutorial matriz /////////////////////////////////////////////////
-;a matriz tem tamanho 10 no X e 25 no Y
+;a matriz tem tamanho 10 no X e 20 no Y
 ;para usar os procedimentos, basta pensar:
 ;matriz(x,y)  --->
 ;mov matx, X    +   mov maty, Y
@@ -262,8 +279,9 @@ verifLinha endp
 ;mov maty,4            mov maty,4
 ;mov matval, 80        call getMatriz
 ;call setMatriz        mov al, matval
+;matriz[2,4]=80        matval=matriz[2,4]
 ;/////////////////////////////////////////////////////////////////////////////
-getMatriz proc uses ax cx
+getMatriz proc uses eax ecx
     xor eax, eax              ;limpa registrador
     mov eax, maty             ;move valor Y
     mov ecx, 10               ;move tamanho da linha
@@ -276,13 +294,12 @@ getMatriz proc uses ax cx
     mov matval, al           ;move al pra variavel desejada
     ret                       ;fim
 getMatriz endp
-
-setMatriz proc uses ax cx
+setMatriz proc uses eax ecx
     xor eax, eax              ;limpa registrador
     mov eax, maty             ;move valor Y
     mov ecx, 10               ;move tamanho da linha
     mul ecx                   ;multiplica os valores (anda pela maior dimensão do vetor)
-    xor ecx,ecx               ;limpa cx
+    xor ecx, ecx              ;limpa cx
     mov ecx, matx             ;move valor X
     add eax, ecx              ;soma à posição final
     mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz
@@ -330,8 +347,9 @@ WinMain proc hInst     :DWORD,
         ; Centre window at following size
         ;================================
 
-        mov Wwd, 340
-        mov Wht, 618 
+        ;tamanho da tela
+        mov Wwd, 330
+        mov Wht, 608 
 
         invoke GetSystemMetrics,SM_CXSCREEN ; get screen width in pixels
         invoke TopXY,Wwd,eax
@@ -347,15 +365,12 @@ WinMain proc hInst     :DWORD,
         invoke CreateWindowEx,WS_EX_OVERLAPPEDWINDOW,
                               ADDR szClassName,
                               ADDR szDisplayName,
-                              WS_OVERLAPPEDWINDOW,
+                              WS_SYSMENU,
                               Wtx,Wty,Wwd,Wht,
                               NULL,NULL,
                               hInst,NULL
 
         mov   hWnd,eax  ; copy return value into handle DWORD
-
-        invoke LoadMenu,hInst,600                 ; load resource menu
-        invoke SetMenu,hWnd,eax                   ; set it to main window
 
         invoke ShowWindow,hWnd,SW_SHOWNORMAL      ; display the window
         invoke UpdateWindow,hWnd                  ; update the display
@@ -388,15 +403,8 @@ WndProc proc hWin   :DWORD,
         LOCAL hDC :DWORD   ;handle do dispositivo
 
 ; ########################################################################
-    .if uMsg == WM_COMMAND
-  
-    ;======== menu commands ========
 
-        
-
-    ;====== end menu commands ======
-
-    .elseif uMsg == WM_PAINT
+    .if uMsg == WM_PAINT
 
       invoke  BeginPaint, hWin, ADDR Ps
       mov     hDC, eax
@@ -409,134 +417,174 @@ WndProc proc hWin   :DWORD,
 
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
-      
+
+      ;começa com uma peça aleatoria
       call  getrandom
 
+      mov   posY, 1
+      mov   posX, 4
+
+      mov descendo, 3
 ; ########################################################################
 
     .elseif uMsg == WM_KEYUP
 
-      .if wParam == VK_UP
-        mov   al,posicaoPeca
-        mov   ultimaRot,al
-        dec   posicaoPeca
+      .if wParam == VK_DOWN
+        mov virando,0
 
-        .if posicaoPeca == -1
-          mov posicaoPeca, 3
-        .endif
-        dec timerDesce
-
-      .elseif wParam == VK_DOWN
-        mov   al,posicaoPeca
-        mov   ultimaRot,al
-        inc   posicaoPeca
-
-        .if posicaoPeca == 4
-          mov posicaoPeca, 0
-        .endif
-        dec timerDesce
+      .elseif wParam == VK_UP
+        mov virando,0
         
       .elseif wParam == VK_RIGHT
-
-        ;se o bloco está dentro da tela
-        .if posX < 9 && posX1 < 9 && posX2 < 9 && posX3 < 9
-
-          ;verifica se n tem bloco no caminho
-          ;bloco 1
-          mov eax,posX
-          mov matx,eax
-          inc matx
-          mov eax,posY
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_right
-          .endif
-          ;bloco 2
-          mov eax,posX1
-          mov matx,eax
-          inc matx
-          mov eax,posY1
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_right
-          .endif
-          ;bloco 3
-          mov eax,posX2
-          mov matx,eax
-          inc matx
-          mov eax,posY2
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_right
-          .endif
-          ;bloco 4
-          mov eax,posX3
-          mov matx,eax
-          inc matx
-          mov eax,posY3
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_right
-          .endif
-          inc posX
-          n_anda_right:
-        .endif  
-        
+        mov movendo,0      
         
         
       .elseif wParam == VK_LEFT
+        mov movendo,0      
 
-        ;se o bloco está dentro da tela
-        .if posX > 0 && posX1 > 0 && posX2 > 0 && posX3 > 0
+      .elseif wParam == VK_SPACE
+        mov descendo, 3
+        
+      .endif
 
-          ;verifica se n tem bloco no caminho
-          ;bloco 1
-          mov eax,posX
-          mov matx,eax
-          dec matx
-          mov eax,posY
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_left
+  ;////////////////////////////////////////
+  .elseif uMsg == WM_KEYDOWN
+
+      .if wParam == VK_DOWN
+        .if virando==0
+          ;rotaciona a peça
+          mov   al,posicaoPeca
+          mov   ultimaRot,al
+          dec   posicaoPeca
+
+          .if posicaoPeca == -1
+            mov posicaoPeca, 3
           .endif
-          ;bloco 2
-          mov eax,posX1
-          mov matx,eax
-          dec matx
-          mov eax,posY1
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_left
+          dec timerDesce
+          mov virando,1
+        .endif
+
+      .elseif wParam == VK_SPACE
+        mov descendo, 1
+
+      .elseif wParam == VK_UP      
+        .if virando==0
+          ;rotaciona a peça
+          mov   al,posicaoPeca
+          mov   ultimaRot,al
+          inc   posicaoPeca
+
+          .if posicaoPeca == 4
+            mov posicaoPeca, 0
           .endif
-          ;bloco 3
-          mov eax,posX2
-          mov matx,eax
-          dec matx
-          mov eax,posY2
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_left
-          .endif
-          ;bloco 4
-          mov eax,posX3
-          mov matx,eax
-          dec matx
-          mov eax,posY3
-          mov maty,eax
-          call getMatriz
-          .if matval !=0
-            jmp n_anda_left
-          .endif
-          sub posX, 1
-          n_anda_left:
-        .endif            
+          dec timerDesce
+          mov virando,1
+        .endif        
+      .elseif wParam == VK_RIGHT
+        .if movendo==0
+
+          ;se o bloco está dentro da tela
+          .if posX < 9 && posX1 < 9 && posX2 < 9 && posX3 < 9
+
+            ;verifica se n tem bloco no caminho
+            ;bloco 1
+            mov eax,posX
+            mov matx,eax
+            inc matx
+            mov eax,posY
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_right
+            .endif
+            ;bloco 2
+            mov eax,posX1
+            mov matx,eax
+            inc matx
+            mov eax,posY1
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_right
+            .endif
+            ;bloco 3
+            mov eax,posX2
+            mov matx,eax
+            inc matx
+            mov eax,posY2
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_right
+            .endif
+            ;bloco 4
+            mov eax,posX3
+            mov matx,eax
+            inc matx
+            mov eax,posY3
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_right
+            .endif
+            inc posX
+            n_anda_right:
+            mov movendo,1
+          .endif         
+        .endif        
+        
+      .elseif wParam == VK_LEFT
+        .if movendo==0
+
+          ;se o bloco está dentro da tela
+          .if posX > 0 && posX1 > 0 && posX2 > 0 && posX3 > 0
+
+            ;verifica se n tem bloco no caminho
+            ;bloco 1
+            mov eax,posX
+            mov matx,eax
+            dec matx
+            mov eax,posY
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_left
+            .endif
+            ;bloco 2
+            mov eax,posX1
+            mov matx,eax
+            dec matx
+            mov eax,posY1
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_left
+            .endif
+            ;bloco 3
+            mov eax,posX2
+            mov matx,eax
+            dec matx
+            mov eax,posY2
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_left
+            .endif
+            ;bloco 4
+            mov eax,posX3
+            mov matx,eax
+            dec matx
+            mov eax,posY3
+            mov maty,eax
+            call getMatriz
+            .if matval !=0
+              jmp n_anda_left
+            .endif
+            sub posX, 1
+            n_anda_left:
+            mov movendo,1
+          .endif           
+        .endif 
 
       .endif
 
@@ -546,79 +594,27 @@ WndProc proc hWin   :DWORD,
       
       invoke  KillTimer, hWin, iTimer
       inc timerDesce
-
-      
-      ;verifica se tem algo na matriz
-      ;bloco1
-      mov eax,posX
-      mov matx,eax
-      mov eax,posY
-      mov maty,eax
-      inc maty
-      call getMatriz
-      .if matval!=0
-        jmp insere
-      .endif
-      ;bloco2
-      mov eax,posX1
-      mov matx,eax
-      mov eax,posY1
-      mov maty,eax
-      inc maty
-      call getMatriz
-      .if matval!=0
-        jmp insere
-      .endif
-      ;bloco3
-      mov eax,posX2
-      mov matx,eax
-      mov eax,posY2
-      mov maty,eax
-      inc maty
-      call getMatriz
-      .if matval!=0
-        jmp insere
-      .endif
-      ;bloco4
-      mov eax,posX3
-      mov matx,eax
-      mov eax,posY3
-      mov maty,eax
-      inc maty
-      call getMatriz
-      .if matval!=0
-        jmp insere
-      .endif
-
-      ;verifica se chegou no final da tela
-      .if posY >= 17 || posY1 >= 17 || posY2 >= 17 || posY3 >=17
-         jmp insere
-      .endif
-
-      jmp dpsInsere
-
-      insere:
-
-        call  insereMat
-        mov   posY, 1
-        mov   posX, 4
-        call  getrandom
-        jmp   dpstick
-      dpsInsere:
-      
-
-      .if timerDesce >= 2
-        mov timerDesce, 0
-        inc posY
-      .endif
-
-      dpstick:
       
       invoke  BeginPaint, hWin, ADDR Ps
       mov     hDC, eax
       invoke  EndPaint, hWin, ADDR Ps
 
       invoke  InvalidateRect, hWin, NULL, TRUE
+
+      .if gameover == 1
+        szText TheText,"Voce perdeu. . ."
+        invoke MessageBox,hWin,ADDR TheText,ADDR szDisplayName,MB_OK
+        invoke PostQuitMessage,NULL
+        return 0
+      .endif
+
+      xor eax,eax
+      mov al, descendo
+      cmp eax, timerDesce
+      jg n_desce
+      mov timerDesce, 0
+      inc posY
+      n_desce:
       
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
@@ -673,7 +669,8 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
 
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
-dnv:
+  
+dnv:  ;hardcode da posição das peças
   .if posicaoPeca == 0
     jmp direita
 
@@ -848,6 +845,7 @@ direita:
   .endif
   
 fimA: 
+  ;verifica se o bloco saiu da tela
   ;          VVV se está nessas condições, é pq a peça está nos negativos (-1, -2,...) VVV
   .if posX >= 1989210000 || posX1 >= 1989210000 || posX2 >= 1989210000 || posX3 >= 1989210000
     inc posX
@@ -902,6 +900,7 @@ fimA:
     jmp dnv
   .endif
   
+  ;desenha todos os blocos que estão na matriz
   mov matx,0
   mov maty,0
   desenhaMat:
@@ -933,7 +932,7 @@ fimA:
   .endif
 
   .if maty==17
-    .if matx==10
+    .if matx==9
       jmp dpsDesenhaMat
     .endif
     mov maty, 0
@@ -987,6 +986,69 @@ fimA:
   mov aux32Y, eax
   invoke TransparentBlt, hDC, aux32X, aux32Y, 32, 32, memDC, 0, cor, 32, 32, TRUE
   ;////////
+
+  ;verifica se tem algo na matriz
+    ;bloco1
+    mov eax,posX
+    mov matx,eax
+    mov eax,posY
+    mov maty,eax
+    inc maty
+    call getMatriz
+    .if matval!=0
+      jmp insere
+    .endif
+    ;bloco2
+    mov eax,posX1
+    mov matx,eax
+    mov eax,posY1
+    mov maty,eax
+    inc maty
+    call getMatriz
+    .if matval!=0
+      jmp insere
+    .endif
+    ;bloco3
+    mov eax,posX2
+    mov matx,eax
+    mov eax,posY2
+    mov maty,eax
+    inc maty
+    call getMatriz
+    .if matval!=0
+      jmp insere
+    .endif
+    ;bloco4
+    mov eax,posX3
+    mov matx,eax
+    mov eax,posY3
+    mov maty,eax
+    inc maty
+    call getMatriz
+    .if matval!=0
+      jmp insere
+    .endif
+
+    ;verifica se chegou no final da tela
+    .if posY >= 17 || posY1 >= 17 || posY2 >= 17 || posY3 >=17
+      jmp insere
+    .endif
+
+    jmp dpsInsere
+
+    ;insere na matriz
+    insere:
+      ;verifica se há blocos muito acima
+      .if posY < 3 ||  posY1 < 3 ||  posY2 < 3 ||  posY3 < 3
+        mov gameover,1
+      .else
+        call  insereMat
+      .endif
+
+      mov   posY, 1
+      mov   posX, 4
+      call  getrandom
+    dpsInsere:
 
 
   invoke SelectObject, hDC, hOld
