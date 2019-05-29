@@ -1,9 +1,8 @@
-;//////////////////////////////////////////////////////////////////////////////////
 ;feito por:
 ;17182 guilherme rojas ribeiro
 ;17176 francisco luiz maian
 ;17189 lucas alvim romani
-;para o prof sergio na mat√©ria 'linguagem de montagem'
+;para o prof sergio na matÈria 'linguagem de montagem'
 ;todos direitos reservados -- 2019
 ;//////////////////////////////////////////////////////////////////////////////////
       .386
@@ -76,30 +75,30 @@
         hInstance     dd 0
         hBmpDesenho1  dd 0
 
-        ;variaveis para controle de pe√ßa
-        posicaoPeca   db 0 ;sentido de rota√ß√£o da pe√ßa (1-4)
-        tipoPeca      db 0 ;tipo de pe√ßa (1-7)
-        ultimaRot     db 0 ;auxiliar para rota√ß√µes
+        ;variaveis para controle de peÁa
+        posicaoPeca   db 0 ;sentido de rotaÁ„o da peÁa (1-4)
+        tipoPeca      db 0 ;tipo de peÁa (1-7)
+        ultimaRot     db 0 ;auxiliar para rotaÁıes
 
-        ;variaveis para controle de exibi√ß√£o na tela
+        ;variaveis para controle de exibiÁ„o na tela
         timerDesce    dd 0        
 
-        ;matriz responsavel por armazenar pe√ßas j√° colocadas
+        ;matriz responsavel por armazenar peÁas j· colocadas
         matrix        dd 10*20   dup(0)  
         matx          dd 0 ;indice X da matriz
         maty          dd 0 ;indice Y da matriz
         matval        db 1 dup (?) ;valor inserido/obtido da matriz
 
-        ;auxiliares para convers√£o de posi√ß√£o da pe√ßa para coordenadas gr√°ficas absolutas
+        ;auxiliares para convers„o de posiÁ„o da peÁa para coordenadas gr·ficas absolutas
         aux32X dd 0
         aux32Y dd 0
         
-        ;variavel para exibir a cor correta para cada pe√ßa na tela
+        ;variavel para exibir a cor correta para cada peÁa na tela
         cor    dd 0
 
-        ;variaveis de posi√ß√£o para cada pe√ßa que o usuario est√° controlando
-        ;toda pe√ßa tetris (tetrimo) possui sempre 4 blocos
-        ;poderia ser um vetor, caso quisessemos otimizar mais, por√©m teriamos que re-trabalhar a l√≥gica
+        ;variaveis de posiÁ„o para cada peÁa que o usuario est· controlando
+        ;toda peÁa tetris (tetrimo) possui sempre 4 blocos
+        ;poderia ser um vetor, caso quisessemos otimizar mais, porÈm teriamos que re-trabalhar a lÛgica
         posX     dd 0
         posY     dd 0
         posX1    dd 0
@@ -109,7 +108,7 @@
         posX3    dd 0
         posY3    dd 0
 
-        ;flags de movimenta√ß√£o
+        ;flags de movimentaÁ„o
         movendo  db 0
         virando  db 0
         descendo db 0
@@ -143,13 +142,13 @@ start:
 
 ; #########################################################################
 ;obtem um numero aleatorio de 1-7
-;como nesse programa √© usado para gerar o tipo da pe√ßa, o 'retorno' vai direto no tipoPeca
+;como nesse programa È usado para gerar o tipo da peÁa, o 'retorno' vai direto no tipoPeca
 getrandom proc uses eax 
   gerar:
     invoke  GetTickCount
     invoke  nseed, eax
     invoke  nrandom, 8 ;gera um numero random de 0 a 8
-    ;geramos de 0 a 8 para que os numeros que n√≥s queremos (1-7) se tornam equiprov√°veis
+    ;geramos de 0 a 8 para que os numeros que nÛs queremos (1-7) se tornam equiprov·veis
     cmp eax,0
     je gerar
     cmp eax,8
@@ -159,7 +158,7 @@ getrandom proc uses eax
 getrandom endp
 
 ;move todos os 4 blocos para as coordenadas do bloco principal
-;usado na hora de rotacionar as pe√ßas
+;usado na hora de rotacionar as peÁas
 igualaBlocos proc uses eax
   mov eax, posX
   mov posX1, eax
@@ -173,7 +172,7 @@ igualaBlocos proc uses eax
   ret  
 igualaBlocos endp
 
-;insere a pe√ßa atual na matriz
+;insere a peÁa atual na matriz
 insereMat proc uses eax
   ;bloco1
   mov eax, posX
@@ -212,7 +211,7 @@ insereMat proc uses eax
   ret
 insereMat endp
 
-;loopa por todas as linhas da matriz procurando pe√ßa
+;loopa por todas as linhas da matriz procurando peÁa
 verifLinha proc
   ;verifica de baixo pra cima
   mov matx,0
@@ -220,7 +219,7 @@ verifLinha proc
   ;verifica linha
   vfLinha:
   call getMatriz
-  .if matval == 0 ;a linha n est√° cheia. . .    
+  .if matval == 0 ;a linha n est· cheia. . .    
     jmp mudaLinha
   .endif
   jmp mudaColuna
@@ -234,7 +233,7 @@ verifLinha proc
   jmp vfLinha
   ;muda indice X
   mudaColuna:
-  .if matx == 9 ;se chegou no final, √© pq n achou uma coluna vazia, logo, est√° cheia
+  .if matx == 9 ;se chegou no final, È pq n achou uma coluna vazia, logo, est· cheia
     jmp limpaLinha
   .endif
   inc matx
@@ -246,7 +245,7 @@ verifLinha proc
   moveBlocoBaixo:  
   .if matx == 10
     .if maty == 1
-      ;reinicia verifica√ß√£o
+      ;reinicia verificaÁ„o
       mov maty,20
       mov matx,0
       jmp vfLinha
@@ -285,12 +284,12 @@ getMatriz proc uses eax ecx
     xor eax, eax              ;limpa registrador
     mov eax, maty             ;move valor Y
     mov ecx, 10               ;move tamanho da linha
-    mul ecx                   ;multiplica os valores (anda pela maior dimens√£o do vetor)
+    mul ecx                   ;multiplica os valores (anda pela maior dimens„o do vetor)
     mov ecx, matx             ;move valor X
-    add eax, ecx              ;soma √† posi√ß√£o final
-    mov edi, OFFSET matrix    ;move pro EDI a posi√ß√£o da mem√≥ria da matriz
-    add edi, eax              ;soma pra posi√ß√£o da matriz a posi√ß√£o desejada
-    mov al, byte ptr[edi]     ;coloca o valor da posi√ß√£o no al
+    add eax, ecx              ;soma ‡ posiÁ„o final
+    mov edi, OFFSET matrix    ;move pro EDI a posiÁ„o da memÛria da matriz
+    add edi, eax              ;soma pra posiÁ„o da matriz a posiÁ„o desejada
+    mov al, byte ptr[edi]     ;coloca o valor da posiÁ„o no al
     mov matval, al           ;move al pra variavel desejada
     ret                       ;fim
 getMatriz endp
@@ -298,12 +297,12 @@ setMatriz proc uses eax ecx
     xor eax, eax              ;limpa registrador
     mov eax, maty             ;move valor Y
     mov ecx, 10               ;move tamanho da linha
-    mul ecx                   ;multiplica os valores (anda pela maior dimens√£o do vetor)
+    mul ecx                   ;multiplica os valores (anda pela maior dimens„o do vetor)
     xor ecx, ecx              ;limpa cx
     mov ecx, matx             ;move valor X
-    add eax, ecx              ;soma √† posi√ß√£o final
-    mov edi, OFFSET matrix    ;move pro EDI a posi√ß√£o da mem√≥ria da matriz
-    add edi, eax              ;soma pra posi√ß√£o da matriz a posi√ß√£o desejada
+    add eax, ecx              ;soma ‡ posiÁ„o final
+    mov edi, OFFSET matrix    ;move pro EDI a posiÁ„o da memÛria da matriz
+    add edi, eax              ;soma pra posiÁ„o da matriz a posiÁ„o desejada
     ;coloca o valor da matriz no edi
     mov al, matval
     mov byte ptr[edi], al
@@ -418,7 +417,7 @@ WndProc proc hWin   :DWORD,
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
 
-      ;come√ßa com uma pe√ßa aleatoria
+      ;comeÁa com uma peÁa aleatoria
       call  getrandom
 
       mov   posY, 1
@@ -450,9 +449,9 @@ WndProc proc hWin   :DWORD,
   ;////////////////////////////////////////
   .elseif uMsg == WM_KEYDOWN
 
-      .if wParam == VK_DOWN
+      .if wParam == VK_UP
         .if virando==0
-          ;rotaciona a pe√ßa
+          ;rotaciona a peÁa
           mov   al,posicaoPeca
           mov   ultimaRot,al
           dec   posicaoPeca
@@ -467,9 +466,9 @@ WndProc proc hWin   :DWORD,
       .elseif wParam == VK_SPACE
         mov descendo, 1
 
-      .elseif wParam == VK_UP      
+      .elseif wParam == VK_DOWN
         .if virando==0
-          ;rotaciona a pe√ßa
+          ;rotaciona a peÁa
           mov   al,posicaoPeca
           mov   ultimaRot,al
           inc   posicaoPeca
@@ -483,7 +482,7 @@ WndProc proc hWin   :DWORD,
       .elseif wParam == VK_RIGHT
         .if movendo==0
 
-          ;se o bloco est√° dentro da tela
+          ;se o bloco est· dentro da tela
           .if posX < 9 && posX1 < 9 && posX2 < 9 && posX3 < 9
 
             ;verifica se n tem bloco no caminho
@@ -536,7 +535,7 @@ WndProc proc hWin   :DWORD,
       .elseif wParam == VK_LEFT
         .if movendo==0
 
-          ;se o bloco est√° dentro da tela
+          ;se o bloco est· dentro da tela
           .if posX > 0 && posX1 > 0 && posX2 > 0 && posX3 > 0
 
             ;verifica se n tem bloco no caminho
@@ -670,7 +669,7 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
   
-dnv:  ;hardcode da posi√ß√£o das pe√ßas
+dnv:  ;hardcode da posiÁ„o das peÁas
   .if posicaoPeca == 0
     jmp direita
 
@@ -846,7 +845,7 @@ direita:
   
 fimA: 
   ;verifica se o bloco saiu da tela
-  ;          VVV se est√° nessas condi√ß√µes, √© pq a pe√ßa est√° nos negativos (-1, -2,...) VVV
+  ;          VVV se est· nessas condiÁıes, È pq a peÁa est· nos negativos (-1, -2,...) VVV
   .if posX >= 1989210000 || posX1 >= 1989210000 || posX2 >= 1989210000 || posX3 >= 1989210000
     inc posX
     jmp dnv
@@ -900,7 +899,7 @@ fimA:
     jmp dnv
   .endif
   
-  ;desenha todos os blocos que est√£o na matriz
+  ;desenha todos os blocos que est„o na matriz
   mov matx,0
   mov maty,0
   desenhaMat:
@@ -943,7 +942,7 @@ fimA:
   jmp desenhaMat  
   dpsDesenhaMat:
   
-  ;desenha os blocos da pe√ßa atual
+  ;desenha os blocos da peÁa atual
   ;bloco 1
   mov ecx, 32
   xor eax,eax
@@ -1038,7 +1037,7 @@ fimA:
 
     ;insere na matriz
     insere:
-      ;verifica se h√° blocos muito acima
+      ;verifica se h· blocos muito acima
       .if posY < 3 ||  posY1 < 3 ||  posY2 < 3 ||  posY3 < 3
         mov gameover,1
       .else
