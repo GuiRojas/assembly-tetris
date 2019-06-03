@@ -113,6 +113,7 @@
 
         ;variavel de pontuacao
         pont     dd 0
+        qtdL     db 0
 
         ;flags de movimentação
         movendo  db 0
@@ -219,6 +220,7 @@ insereMat endp
 
 ;loopa por todas as linhas da matriz procurando peça
 verifLinha proc
+  mov qtdL, 0
   ;verifica de baixo pra cima
   mov matx,0
   mov maty,20
@@ -240,7 +242,7 @@ verifLinha proc
   ;muda indice X
   mudaColuna:
   .if matx == 9 ;se chegou no final, é pq n achou uma coluna vazia, logo, está cheia
-    inc pont
+    inc qtdL
     jmp limpaLinha
   .endif
   inc matx
@@ -248,6 +250,11 @@ verifLinha proc
 
   limpaLinha:
   mov matx,0
+  push eax
+  xor eax,eax
+  mov al, qtdL
+  add pont, eax
+  pop eax
   ;move todas as linhas acima uma para baixo
   moveBlocoBaixo:  
   .if matx == 10
