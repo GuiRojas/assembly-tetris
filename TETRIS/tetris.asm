@@ -70,6 +70,8 @@
         TIMER_MAX EQU 100
 
     .data
+        displayPont   db "Pontuacao: %d", 0
+        buffer        db 255
         szDisplayName db "TETRIS",0
         CommandLine   dd 0
         hWnd          dd 0
@@ -108,6 +110,9 @@
         posY2    dd 0
         posX3    dd 0
         posY3    dd 0
+
+        ;variavel de pontuacao
+        pont     dd 0
 
         ;flags de movimentação
         movendo  db 0
@@ -235,6 +240,7 @@ verifLinha proc
   ;muda indice X
   mudaColuna:
   .if matx == 9 ;se chegou no final, é pq n achou uma coluna vazia, logo, está cheia
+    inc pont
     jmp limpaLinha
   .endif
   inc matx
@@ -669,6 +675,9 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
 
   invoke SelectObject, memDC, hBmpDesenho1
   mov     hOld, eax
+
+  invoke wsprintfA, ADDR buffer, ADDR displayPont, pont
+  invoke ExtTextOutA, hDC,0, 0, ETO_CLIPPED, NULL, ADDR buffer, eax, NULL
   
 dnv:  ;hardcode da posição das peças
   .if posicaoPeca == 0
