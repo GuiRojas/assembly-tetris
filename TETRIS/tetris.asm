@@ -70,7 +70,7 @@
         TIMER_MAX EQU 100
 
     .data
-        displayPont   db "Pontuacao: %d", 0
+        displayPont   db " Pontuacao: %d", 0
         buffer        db 255
         szDisplayName db "TETRIS",0
         CommandLine   dd 0
@@ -186,6 +186,10 @@ insereMat proc uses eax
   mov matx,eax
   mov eax,posY
   mov maty,eax
+  call getMatriz
+  .if matval != 0
+    mov gameover, 1
+  .endif
   mov al,tipoPeca
   mov matval,al
   call setMatriz
@@ -214,7 +218,9 @@ insereMat proc uses eax
   mov matval,al
   call setMatriz
   ;verifica se completou alguma linha
-  call verifLinha
+  .if gameover==0
+    call verifLinha
+  .endif
   ret
 insereMat endp
 
@@ -348,7 +354,7 @@ WinMain proc hInst     :DWORD,
         mov wc.hbrBackground,  COLOR_BTNFACE+1     ; system color
         mov wc.lpszMenuName,   NULL
         mov wc.lpszClassName,  offset szClassName  ; window class name
-          invoke LoadIcon,hInst,500    ; icon ID   ; resource icon
+          invoke LoadIcon,hInst,400    ; icon ID   ; resource icon
         mov wc.hIcon,          eax
           invoke LoadCursor,NULL,IDC_ARROW         ; system cursor
         mov wc.hCursor,        eax
@@ -612,7 +618,6 @@ WndProc proc hWin   :DWORD,
       mov     hDC, eax
       invoke  EndPaint, hWin, ADDR Ps
 
-      invoke  InvalidateRect, hWin, NULL, TRUE
 
       .if gameover == 1
         szText TheText,"Voce perdeu. . ."
@@ -631,6 +636,7 @@ WndProc proc hWin   :DWORD,
       
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
       mov     iTimer, eax
+      invoke  InvalidateRect, hWin, NULL, TRUE
 
 ; ########################################################################
 
@@ -728,9 +734,9 @@ esquerda:
     inc posX2
     inc posY2
     inc posY3
-  .elseif tipoPeca == 6 ;T 
+  .elseif tipoPeca == 6 ;T   
     dec posY1
-    dec posX2
+    inc posX2
     inc posY3
   .elseif tipoPeca == 7 ;I
     inc posY1
@@ -849,9 +855,9 @@ direita:
     inc posX2
     inc posY2
     inc posY3
-  .elseif tipoPeca == 6 ;T   
+  .elseif tipoPeca == 6 ;T 
     dec posY1
-    inc posX2
+    dec posX2
     inc posY3
   .elseif tipoPeca == 7 ;I
     dec posY1
@@ -1009,6 +1015,11 @@ fimA:
     mov matx,eax
     mov eax,posY
     mov maty,eax
+    call getMatriz
+    .if matval!=0
+      mov gameover,1
+      jmp dpsInsere
+    .endif
     inc maty
     call getMatriz
     .if matval!=0
@@ -1019,6 +1030,11 @@ fimA:
     mov matx,eax
     mov eax,posY1
     mov maty,eax
+    call getMatriz
+    .if matval!=0
+      mov gameover,1
+      jmp dpsInsere
+    .endif
     inc maty
     call getMatriz
     .if matval!=0
@@ -1029,6 +1045,11 @@ fimA:
     mov matx,eax
     mov eax,posY2
     mov maty,eax
+    call getMatriz
+    .if matval!=0
+      mov gameover,1
+      jmp dpsInsere
+    .endif
     inc maty
     call getMatriz
     .if matval!=0
@@ -1039,6 +1060,11 @@ fimA:
     mov matx,eax
     mov eax,posY3
     mov maty,eax
+    call getMatriz
+    .if matval!=0
+      mov gameover,1
+      jmp dpsInsere
+    .endif
     inc maty
     call getMatriz
     .if matval!=0
@@ -1055,15 +1081,17 @@ fimA:
     ;insere na matriz
     insere:
       ;verifica se há blocos muito acima
+      call  insereMat
+
       .if posY < 4 ||  posY1 < 4 ||  posY2 < 4 ||  posY3 < 4
         mov gameover,1
+      .else      
+        mov   posY, 1     
+        mov   posX, 4
+        call  getrandom
       .endif
-      call  insereMat
-      
+    
 
-      mov   posY, 1
-      mov   posX, 4
-      call  getrandom
     dpsInsere:
 
 
