@@ -738,15 +738,15 @@ esquerda:
 baixo:
   call igualaBlocos
   .if tipoPeca == 1     ;J
+   dec posX1
+    inc posX2
+    dec posX3
+    dec posY3
+  .elseif tipoPeca == 2 ;L
     dec posX1
     inc posX2
     inc posX3
-    inc posY3
-  .elseif tipoPeca == 2 ;L
-    inc posX1
-    dec posX2
-    dec posX3
-    inc posY3
+    dec posY3
   .elseif tipoPeca == 3 ;S
     inc posX1
     inc posY2
@@ -780,13 +780,13 @@ cima:
   .if tipoPeca == 1     ;J
     dec posX1
     inc posX2
-    dec posX3
-    dec posY3
-  .elseif tipoPeca == 2 ;L
-    dec posX1
-    inc posX2
     inc posX3
-    dec posY3
+    inc posY3
+  .elseif tipoPeca == 2 ;L
+    inc posX1
+    dec posX2
+    dec posX3
+    inc posY3
   .elseif tipoPeca == 3 ;S
     dec posX1
     dec posY2
@@ -1050,9 +1050,9 @@ fimA:
       ;verifica se há blocos muito acima
       .if posY < 4 ||  posY1 < 4 ||  posY2 < 4 ||  posY3 < 4
         mov gameover,1
-      .else
-        call  insereMat
       .endif
+      call  insereMat
+      
 
       mov   posY, 1
       mov   posX, 4
