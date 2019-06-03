@@ -429,10 +429,10 @@ WndProc proc hWin   :DWORD,
 
     .elseif uMsg == WM_KEYUP
 
-      .if wParam == VK_DOWN
+      .if wParam == VK_UP
         mov virando,0
 
-      .elseif wParam == VK_UP
+      .elseif wParam == VK_DOWN
         mov virando,0
         
       .elseif wParam == VK_RIGHT
@@ -1039,7 +1039,7 @@ fimA:
     ;insere na matriz
     insere:
       ;verifica se há blocos muito acima
-      .if posY < 3 ||  posY1 < 3 ||  posY2 < 3 ||  posY3 < 3
+      .if posY < 4 ||  posY1 < 4 ||  posY2 < 4 ||  posY3 < 4
         mov gameover,1
       .else
         call  insereMat
