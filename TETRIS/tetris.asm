@@ -1,10 +1,12 @@
 ;//////////////////////////////////////////////////////////////////////////////////
-;feito por:
+;feito por:  // made by:
 ;17182 guilherme rojas ribeiro
 ;17176 francisco luiz maian
 ;17189 lucas alvim romani
-;para o prof sergio na matéria 'linguagem de montagem'
-;todos direitos reservados -- 2019
+;para o prof Sergio na matéria 'linguagem de montagem'
+;for professor Sergio on the class 'assembler language'
+;todos direitos reservados -- 2019  ©
+;all rights reserved -- 2019  ©
 ;//////////////////////////////////////////////////////////////////////////////////
       .386
       .model flat, stdcall
@@ -50,7 +52,7 @@
 
 ; #########################################################################
 
-; METODOS
+; METODOS  // methods
 
         WinMain PROTO :DWORD,:DWORD,:DWORD,:DWORD
         WndProc PROTO :DWORD,:DWORD,:DWORD,:DWORD
@@ -60,7 +62,7 @@
 
 ; #########################################################################
 
-;CONSTANTES
+;CONSTANTES  // constants
         sheet     equ  102
 
         CREF_TRANSPARENT  EQU 0FF00FFh
@@ -70,7 +72,7 @@
         TIMER_MAX EQU 100
 
     .data
-        displayPont   db " Pontuacao: %d", 0
+        displayPont   db " Pontuacao: %d", 0 ;score display
         buffer        db 255
         szDisplayName db "TETRIS",0
         CommandLine   dd 0
@@ -79,29 +81,38 @@
         hBmpDesenho1  dd 0
 
         ;variaveis para controle de peça
-        posicaoPeca   db 0 ;sentido de rotação da peça (1-4)
-        tipoPeca      db 0 ;tipo de peça (1-7)
-        ultimaRot     db 0 ;auxiliar para rotações
+        ;variables for piece control
+        posicaoPeca   db 0 ;sentido de rotação da peça (1-4) // piece orientarion
+        tipoPeca      db 0 ;tipo de peça (1-7) // piece type
+        ultimaRot     db 0 ;auxiliar para rotações // auxiliar for rotation
 
         ;variaveis para controle de exibição na tela
+        ;variables for screen exhibition
         timerDesce    dd 0        
 
         ;matriz responsavel por armazenar peças já colocadas
+        ;bidimensional array responsible for storing inserted pieces
         matrix        dd 10*20   dup(0)  
         matx          dd 0 ;indice X da matriz
         maty          dd 0 ;indice Y da matriz
-        matval        db 1 dup (?) ;valor inserido/obtido da matriz
+        matval        db 1 dup (?) ;valor inserido/obtido da matriz // stored value
 
         ;auxiliares para conversão de posição da peça para coordenadas gráficas absolutas
+        ;auxiliar for converting piece position to graphical coordinates
         aux32X dd 0
         aux32Y dd 0
         
         ;variavel para exibir a cor correta para cada peça na tela
-        cor    dd 0
+        ;variable for showing correct color
+        cor    dd 0 ;color
 
         ;variaveis de posição para cada peça que o usuario está controlando
         ;toda peça tetris (tetrimo) possui sempre 4 blocos
         ;poderia ser um vetor, caso quisessemos otimizar mais, porém teriamos que re-trabalhar a lógica
+        ;///
+        ;variables for the position of each controlled piece
+        ;every tetrimo has 4 blocks always
+        ;this could be an array, in the case of further optimization, but it'd be a huge re-work
         posX     dd 0
         posY     dd 0
         posX1    dd 0
@@ -112,18 +123,20 @@
         posY3    dd 0
 
         ;variavel de pontuacao
+        ;scoring variables
         pont     dd 0
         qtdL     db 0
 
         ;flags de movimentação
-        movendo  db 0
-        virando  db 0
-        descendo db 0
+        ;movimentation flags
+        movendo  db 0 ;moving
+        virando  db 0 ;rotating
+        descendo db 0 ;descending
 
-        gameover db 0
+        gameover db 0 ;  :(
 
     .data?
-        ;variavel para uso de tinmer
+        ;timer
         iTimer  dd ?
 
 
@@ -150,12 +163,16 @@ start:
 ; #########################################################################
 ;obtem um numero aleatorio de 1-7
 ;como nesse programa é usado para gerar o tipo da peça, o 'retorno' vai direto no tipoPeca
+;///////
+;get a random number between 1 and 7
+;as we only use it to generate new pieces, its "return" is on the PieceType variable
 getrandom proc uses eax 
   gerar:
     invoke  GetTickCount
     invoke  nseed, eax
-    invoke  nrandom, 8 ;gera um numero random de 0 a 8
+    invoke  nrandom, 8 ;gera um numero random de 0 a 8  // generates random number between 0 and 8
     ;geramos de 0 a 8 para que os numeros que nós queremos (1-7) se tornam equiprováveis
+    ;we generate between 0 and 8 so the desired values (1-7) are equally probable
     cmp eax,0
     je gerar
     cmp eax,8
@@ -166,6 +183,9 @@ getrandom endp
 
 ;move todos os 4 blocos para as coordenadas do bloco principal
 ;usado na hora de rotacionar as peças
+;///////
+;move all blocks to the position of the main block
+;used when rotation the piece
 igualaBlocos proc uses eax
   mov eax, posX
   mov posX1, eax
@@ -180,6 +200,7 @@ igualaBlocos proc uses eax
 igualaBlocos endp
 
 ;insere a peça atual na matriz
+;insert current piece on the array
 insereMat proc uses eax
   ;bloco1
   mov eax, posX
@@ -218,6 +239,7 @@ insereMat proc uses eax
   mov matval,al
   call setMatriz
   ;verifica se completou alguma linha
+  ;verify if any line should be cleared
   .if gameover==0
     call verifLinha
   .endif
@@ -225,36 +247,42 @@ insereMat proc uses eax
 insereMat endp
 
 ;loopa por todas as linhas da matriz procurando peça
+;loop through each line searching for pieces
 verifLinha proc
   mov qtdL, 0
   ;verifica de baixo pra cima
+  ;search from bottom to top
   mov matx,0
   mov maty,20
   ;verifica linha
+  ;verify line
   vfLinha:
   call getMatriz
-  .if matval == 0 ;a linha n está cheia. . .    
+  .if matval == 0 ;a linha n está cheia // line is not full 
     jmp mudaLinha
   .endif
   jmp mudaColuna
   ;muda indice Y 
+  ;change Y index
   mudaLinha:
-  .if maty == 1 ;se chegar na ultima linha
+  .if maty == 1 ;se chegar na ultima linha // when it arrives on the last line
     jmp vfFim
   .endif
   dec maty
-  mov matx,0 ;muda a linha
+  mov matx,0 ;muda a linha // change line
   jmp vfLinha
   ;muda indice X
+  ;change X index
   mudaColuna:
   .if matx == 9 ;se chegou no final, é pq n achou uma coluna vazia, logo, está cheia
+                ;if it arrives at the end, it is because there is no empty collumn, therefore is a full line
     inc qtdL
     jmp limpaLinha
   .endif
   inc matx
   jmp vfLinha
 
-  limpaLinha:
+  limpaLinha: ;clear line
   mov matx,0
   push eax
   xor eax,eax
@@ -262,10 +290,12 @@ verifLinha proc
   add pont, eax
   pop eax
   ;move todas as linhas acima uma para baixo
+  ;move all lines bottom to top
   moveBlocoBaixo:  
   .if matx == 10
     .if maty == 1
       ;reinicia verificação
+      ;restarts verification
       mov maty,20
       mov matx,0
       jmp vfLinha
@@ -287,13 +317,13 @@ verifLinha proc
   ret
 verifLinha endp
 ;////////// tutorial matriz /////////////////////////////////////////////////
-;a matriz tem tamanho 10 no X e 20 no Y
-;para usar os procedimentos, basta pensar:
-;matriz(x,y)  --->
-;mov matx, X    +   mov maty, Y
-;valores usam a var matval
-;exemplos de uso:
-;SETTAR VALOR          GETTAR VALOR         <--------------------------------
+;a matriz tem tamanho 10 no X e 20 no Y     /// the array has X size 10 and Y size 20
+;para usar os procedimentos, basta pensar:  /// to use the procedures, imagine:
+;matriz(x,y)  --->                          
+;mov matx, X    +   mov maty, Y             
+;valores usam a var matval                  /// values usam the variable 'matval'
+;exemplos de uso:                           /// usage:
+;SET                   GET                  <--------------------------------
 ;mov matx,2            mov matx,2
 ;mov maty,4            mov maty,4
 ;mov matval, 80        call getMatriz
@@ -301,20 +331,20 @@ verifLinha endp
 ;matriz[2,4]=80        matval=matriz[2,4]
 ;/////////////////////////////////////////////////////////////////////////////
 getMatriz proc uses eax ecx
-    xor eax, eax              ;limpa registrador
-    mov eax, maty             ;move valor Y
-    mov ecx, 10               ;move tamanho da linha
-    mul ecx                   ;multiplica os valores (anda pela maior dimensão do vetor)
-    mov ecx, matx             ;move valor X
-    add eax, ecx              ;soma à posição final
-    mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz
-    add edi, eax              ;soma pra posição da matriz a posição desejada
-    mov al, byte ptr[edi]     ;coloca o valor da posição no al
-    mov matval, al           ;move al pra variavel desejada
+    xor eax, eax              ;limpa registrador                                          //clear eax
+    mov eax, maty             ;move valor Y                                               //move Y value
+    mov ecx, 10               ;move tamanho da linha                                      //move line size
+    mul ecx                   ;multiplica os valores (anda pela maior dimensão do vetor)  //multiply values
+    mov ecx, matx             ;move valor X                                               //move X value
+    add eax, ecx              ;soma à posição final                                       //add to final position
+    mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz                //move position to EDI
+    add edi, eax              ;soma pra posição da matriz a posição desejada              //add desired position
+    mov al, byte ptr[edi]     ;coloca o valor da posição no al                            //insert value
+    mov matval, al            ;move al pra variavel desejada                              //get from array
     ret                       ;fim
 getMatriz endp
 setMatriz proc uses eax ecx
-    xor eax, eax              ;limpa registrador
+    xor eax, eax              ;limpa registrador                                          //same as above
     mov eax, maty             ;move valor Y
     mov ecx, 10               ;move tamanho da linha
     mul ecx                   ;multiplica os valores (anda pela maior dimensão do vetor)
@@ -323,7 +353,7 @@ setMatriz proc uses eax ecx
     add eax, ecx              ;soma à posição final
     mov edi, OFFSET matrix    ;move pro EDI a posição da memória da matriz
     add edi, eax              ;soma pra posição da matriz a posição desejada
-    ;coloca o valor da matriz no edi
+    ;coloca o valor da matriz no edi                                                      //but instead, moves 'matval' to the array
     mov al, matval
     mov byte ptr[edi], al
     ret      
@@ -438,6 +468,7 @@ WndProc proc hWin   :DWORD,
       mov     iTimer, eax
 
       ;começa com uma peça aleatoria
+      ;starts with random piece
       call  getrandom
 
       mov   posY, 1
@@ -503,9 +534,11 @@ WndProc proc hWin   :DWORD,
         .if movendo==0
 
           ;se o bloco está dentro da tela
+          ;verify if block is on screen
           .if posX < 9 && posX1 < 9 && posX2 < 9 && posX3 < 9
 
             ;verifica se n tem bloco no caminho
+            ;verify if there is no block on the way
             ;bloco 1
             mov eax,posX
             mov matx,eax
@@ -556,9 +589,11 @@ WndProc proc hWin   :DWORD,
         .if movendo==0
 
           ;se o bloco está dentro da tela
+          ;verify if block is on screen
           .if posX > 0 && posX1 > 0 && posX2 > 0 && posX3 > 0
 
             ;verifica se n tem bloco no caminho
+            ;verify if there is no block on the way
             ;bloco 1
             mov eax,posX
             mov matx,eax
@@ -868,7 +903,9 @@ direita:
   
 fimA: 
   ;verifica se o bloco saiu da tela
-  ;          VVV se está nessas condições, é pq a peça está nos negativos (-1, -2,...) VVV
+  ;verify if block is off screen
+  ;          VVV se está nessas condições, é pq a peça está nos negativos  (-1, -2,...) VVV
+  ;          VVV if it is in these conditions, it is on negative positions (-1, -2,...) VVV
   .if posX >= 1989210000 || posX1 >= 1989210000 || posX2 >= 1989210000 || posX3 >= 1989210000
     inc posX
     jmp dnv
@@ -878,6 +915,7 @@ fimA:
     jmp dnv
   .endif
   ;verifica se entrou em um bloco da matriz
+  ;verify if it entered a inserted piece
   mov eax,posX
   mov matx,eax
   mov eax,posY
@@ -923,6 +961,7 @@ fimA:
   .endif
   
   ;desenha todos os blocos que estão na matriz
+  ;draw all inserted pieces from array
   mov matx,0
   mov maty,0
   desenhaMat:
@@ -966,6 +1005,7 @@ fimA:
   dpsDesenhaMat:
   
   ;desenha os blocos da peça atual
+  ;draw current piece's blocks
   ;bloco 1
   mov ecx, 32
   xor eax,eax
@@ -1010,6 +1050,7 @@ fimA:
   ;////////
 
   ;verifica se tem algo na matriz
+  ;verify if there is something on the array
     ;bloco1
     mov eax,posX
     mov matx,eax
@@ -1072,6 +1113,7 @@ fimA:
     .endif
 
     ;verifica se chegou no final da tela
+    ;verify if it is at the bottom of the screen
     .if posY >= 17 || posY1 >= 17 || posY2 >= 17 || posY3 >=17
       jmp insere
     .endif
@@ -1079,11 +1121,14 @@ fimA:
     jmp dpsInsere
 
     ;insere na matriz
+    ;insert on array
     insere:
       ;verifica se há blocos muito acima
+      ;if there are blocks way up high
       call  insereMat
 
       .if posY < 4 ||  posY1 < 4 ||  posY2 < 4 ||  posY3 < 4
+        ;perde // loses
         mov gameover,1
       .else      
         mov   posY, 1     
