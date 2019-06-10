@@ -588,7 +588,9 @@ WndProc proc hWin   :DWORD,
             mov movendo,1
           .endif         
         .endif        
-        
+      .elseif wParam == VK_ESCAPE
+        invoke PostQuitMessage,NULL
+        return 0  
       .elseif wParam == VK_LEFT
         .if movendo==0
 
