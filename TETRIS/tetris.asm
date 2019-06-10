@@ -133,6 +133,7 @@
         virando  db 0 ;rotating
         descendo db 0 ;descending
         timeOutIns db 0
+        invalido db 0
 
         gameover db 0 ;  :(
 
@@ -732,6 +733,8 @@ Paint_Proc proc hWin:DWORD, hDC:DWORD
   invoke wsprintfA, ADDR buffer, ADDR displayPont, pont
   invoke ExtTextOutA, hDC,0, 0, ETO_CLIPPED, NULL, ADDR buffer, eax, NULL
   
+  mov invalido, 1
+
 dnv:  ;hardcode da posição das peças
   .if posicaoPeca == 0
     jmp direita
@@ -928,9 +931,16 @@ fimA:
   mov maty,eax
   call getMatriz
   .if matval !=0
-    mov al,ultimaRot
-    mov posicaoPeca,al
-    jmp dnv
+    .if invalido == 1
+      dec posY
+      mov invalido, 0
+      jmp dnv
+    .else     
+      mov al,ultimaRot
+      mov posicaoPeca,al
+      mov invalido, 1
+      jmp dnv
+    .endif
   .endif
   ;bloco 2
   mov eax,posX1
@@ -939,9 +949,16 @@ fimA:
   mov maty,eax
   call getMatriz
   .if matval !=0
-    mov al,ultimaRot
-    mov posicaoPeca,al
-    jmp dnv
+    .if invalido == 1
+      dec posY
+      mov invalido, 0
+      jmp dnv
+    .else     
+      mov al,ultimaRot
+      mov posicaoPeca,al
+      mov invalido, 1
+      jmp dnv
+    .endif
   .endif
   ;bloco 3
   mov eax,posX2
@@ -950,9 +967,16 @@ fimA:
   mov maty,eax
   call getMatriz
   .if matval !=0
-    mov al,ultimaRot
-    mov posicaoPeca,al
-    jmp dnv
+    .if invalido == 1
+      dec posY
+      mov invalido, 0
+      jmp dnv
+    .else     
+      mov al,ultimaRot
+      mov posicaoPeca,al
+      mov invalido, 1
+      jmp dnv
+    .endif
   .endif
   ;bloco 4
   mov eax,posX3
@@ -961,9 +985,16 @@ fimA:
   mov maty,eax
   call getMatriz
   .if matval !=0
-    mov al,ultimaRot
-    mov posicaoPeca,al
-    jmp dnv
+    .if invalido == 1
+      dec posY
+      mov invalido, 0
+      jmp dnv
+    .else     
+      mov al,ultimaRot
+      mov posicaoPeca,al
+      mov invalido, 1
+      jmp dnv
+    .endif
   .endif
   
   ;desenha todos os blocos que estão na matriz
