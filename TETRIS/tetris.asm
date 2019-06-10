@@ -132,6 +132,7 @@
         movendo  db 0 ;moving
         virando  db 0 ;rotating
         descendo db 0 ;descending
+        timeOutIns db 0
 
         gameover db 0 ;  :(
 
@@ -474,6 +475,8 @@ WndProc proc hWin   :DWORD,
       mov   posY, 1
       mov   posX, 4
 
+      mov timeOutIns,0
+
       mov descendo, 3
 ; ########################################################################
 
@@ -659,14 +662,16 @@ WndProc proc hWin   :DWORD,
         invoke MessageBox,hWin,ADDR TheText,ADDR szDisplayName,MB_OK
         invoke PostQuitMessage,NULL
         return 0
-      .endif
+      .endif      
 
       xor eax,eax
       mov al, descendo
       cmp eax, timerDesce
       jg n_desce
       mov timerDesce, 0
-      inc posY
+      .if timeOutIns==0
+        inc posY
+      .endif
       n_desce:
       
       invoke  SetTimer, hWin, ID_TIMER, TIMER_MAX, NULL
@@ -902,6 +907,7 @@ direita:
   .endif
   
 fimA: 
+
   ;verifica se o bloco saiu da tela
   ;verify if block is off screen
   ;          VVV se está nessas condições, é pq a peça está nos negativos  (-1, -2,...) VVV
@@ -1118,24 +1124,28 @@ fimA:
       jmp insere
     .endif
 
+    mov timeOutIns,0
     jmp dpsInsere
 
     ;insere na matriz
     ;insert on array
     insere:
-      ;verifica se há blocos muito acima
-      ;if there are blocks way up high
-      call  insereMat
+      inc timeOutIns
 
-      .if posY < 4 ||  posY1 < 4 ||  posY2 < 4 ||  posY3 < 4
-        ;perde // loses
-        mov gameover,1
-      .else      
-        mov   posY, 1     
-        mov   posX, 4
-        call  getrandom
-      .endif
-    
+      .if timeOutIns == 3
+        ;verifica se há blocos muito acima
+        ;if there are blocks way up high
+        call  insereMat
+
+        .if posY < 4 ||  posY1 < 4 ||  posY2 < 4 ||  posY3 < 4
+          ;perde // loses
+          mov gameover,1
+        .else      
+          mov   posY, 1     
+          mov   posX, 4
+          call  getrandom
+        .endif
+      .endif    
 
     dpsInsere:
 
